@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "municipal-analytics": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@anthropic-ai/mcp-proxy@latest",
+        "--endpoint",
+        "https://municipal-analytics-mcp.YOUR_SUBDOMAIN.workers.dev/sse"
+      ]
+    }
+  }
+}

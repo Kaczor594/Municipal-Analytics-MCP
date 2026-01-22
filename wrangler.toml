@@ -1,0 +1,44 @@
+# Municipal Analytics MCP Server
+# Cloudflare Workers configuration with D1 database bindings
+
+name = "municipal-analytics-mcp"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+
+# Enable Node.js compatibility for MCP SDK
+compatibility_flags = ["nodejs_compat"]
+
+# D1 Database Bindings
+# IMPORTANT: Replace database_id values with your actual D1 database IDs
+# Run these commands to create databases and get IDs:
+#   wrangler d1 create holly-data-bronze
+#   wrangler d1 create rockford
+#   wrangler d1 create historical-budgets
+
+[[d1_databases]]
+binding = "HOLLY_DB"
+database_name = "holly-data-bronze"
+database_id = "90233f51-396f-4952-8150-e00a6838e586"
+
+[[d1_databases]]
+binding = "ROCKFORD_DB"
+database_name = "rockford"
+database_id = "df9c2875-6978-405c-b8ef-efffebe35e24"
+
+[[d1_databases]]
+binding = "HISTORICAL_DB"
+database_name = "historical-budgets"
+database_id = "3b88bf40-2f12-4f49-a039-7bbcc10f7d5c"
+
+# Observability - enables logging and metrics
+[observability]
+enabled = true
+
+# Environment variables (optional overrides)
+[vars]
+MAX_RESULT_ROWS = "1000"
+QUERY_TIMEOUT_MS = "30000"
+
+# Production environment (optional)
+# [env.production]
+# vars = { MAX_RESULT_ROWS = "500" }
