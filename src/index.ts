@@ -11,7 +11,7 @@
  */
 
 import { createTools, handleToolCall, ToolName } from './tools';
-import { Env } from './database';
+import { Env, logAuditEvent } from './database';
 
 interface MCPRequest {
   jsonrpc: '2.0';
@@ -43,7 +43,7 @@ const SERVER_CAPABILITIES = {
 };
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
     // CORS headers for all responses
@@ -79,7 +79,7 @@ export default {
         return handleSSEConnection(env, corsHeaders);
       } else if (request.method === 'POST') {
         // Handle MCP requests
-        return handleMCPRequest(request, env, corsHeaders);
+        return handleMCPRequest(request, env, ctx, corsHeaders);
       }
     }
 
@@ -102,7 +102,7 @@ export default {
  * Returns an event stream for the MCP protocol
  */
 function handleSSEConnection(
-  env: Env,
+  _env: Env,
   corsHeaders: Record<string, string>
 ): Response {
   const encoder = new TextEncoder();
@@ -139,6 +139,7 @@ function handleSSEConnection(
 async function handleMCPRequest(
   request: Request,
   env: Env,
+  ctx: ExecutionContext,
   corsHeaders: Record<string, string>
 ): Promise<Response> {
   let mcpRequest: MCPRequest;
@@ -159,7 +160,7 @@ async function handleMCPRequest(
     );
   }
 
-  const response = await processMCPRequest(mcpRequest, env);
+  const response = await processMCPRequest(mcpRequest, env, ctx);
 
   return new Response(JSON.stringify(response), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -171,7 +172,8 @@ async function handleMCPRequest(
  */
 async function processMCPRequest(
   request: MCPRequest,
-  env: Env
+  env: Env,
+  ctx: ExecutionContext
 ): Promise<MCPResponse> {
   const { id, method, params } = request;
 
@@ -213,11 +215,42 @@ async function processMCPRequest(
           };
         }
 
-        const result = await handleToolCall(
-          toolName as ToolName,
-          toolArgs,
-          env
-        );
+        const startTime = Date.now();
+        let result: unknown;
+        let success = true;
+        let errorMessage: string | undefined;
+
+        try {
+          result = await handleToolCall(
+            toolName as ToolName,
+            toolArgs,
+            env
+          );
+        } catch (toolError) {
+          success = false;
+          errorMessage = toolError instanceof Error ? toolError.message : 'Unknown error';
+          throw toolError;
+        } finally {
+          const durationMs = Date.now() - startTime;
+          const dbName = (toolArgs.database as string) ?? undefined;
+          const queryText = (toolArgs.query as string) ?? undefined;
+          const rowCount = typeof result === 'object' && result !== null && 'rowCount' in (result as Record<string, unknown>)
+            ? (result as Record<string, unknown>).rowCount as number
+            : undefined;
+
+          ctx.waitUntil(
+            logAuditEvent(env, {
+              tool_name: toolName,
+              database_name: dbName,
+              arguments: JSON.stringify(toolArgs),
+              query_text: queryText,
+              success,
+              error_message: errorMessage,
+              duration_ms: durationMs,
+              row_count: rowCount,
+            })
+          );
+        }
 
         return {
           jsonrpc: '2.0',

@@ -10,6 +10,7 @@ export interface Env {
   HOLLY_DB: D1Database;
   ROCKFORD_DB: D1Database;
   HISTORICAL_DB: D1Database;
+  AUDIT_DB: D1Database;
   MAX_RESULT_ROWS?: string;
   QUERY_TIMEOUT_MS?: string;
 }
@@ -295,4 +296,101 @@ export function getAvailableDatabases(): {
     { name: 'rockford', displayName: 'Rockford' },
     { name: 'historical', displayName: 'Historical Budgets' },
   ];
+}
+
+// --- Audit Logging ---
+
+export interface AuditEntry {
+  tool_name: string;
+  database_name?: string;
+  arguments?: string;
+  query_text?: string;
+  success: boolean;
+  error_message?: string;
+  duration_ms?: number;
+  row_count?: number;
+}
+
+/**
+ * Log a tool call to the audit database.
+ * Fire-and-forget: errors are caught silently so logging never blocks responses.
+ */
+export async function logAuditEvent(
+  env: Env,
+  entry: AuditEntry
+): Promise<void> {
+  try {
+    await env.AUDIT_DB.prepare(
+      `INSERT INTO _audit_log (tool_name, database_name, arguments, query_text, success, error_message, duration_ms, row_count)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+      .bind(
+        entry.tool_name,
+        entry.database_name ?? null,
+        entry.arguments ?? null,
+        entry.query_text ?? null,
+        entry.success ? 1 : 0,
+        entry.error_message ?? null,
+        entry.duration_ms ?? null,
+        entry.row_count ?? null
+      )
+      .run();
+  } catch (e) {
+    console.error('Audit log write failed:', e);
+  }
+}
+
+/**
+ * Query the audit log with optional filters
+ */
+export async function queryAuditLog(
+  env: Env,
+  filters?: {
+    startDate?: string;
+    endDate?: string;
+    toolName?: string;
+    limit?: number;
+  }
+): Promise<QueryResult> {
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+
+  if (filters?.startDate) {
+    conditions.push('timestamp >= ?');
+    params.push(filters.startDate);
+  }
+  if (filters?.endDate) {
+    conditions.push('timestamp <= ?');
+    params.push(filters.endDate);
+  }
+  if (filters?.toolName) {
+    conditions.push('tool_name = ?');
+    params.push(filters.toolName);
+  }
+
+  const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  const limit = filters?.limit ?? 100;
+
+  try {
+    const result = await env.AUDIT_DB.prepare(
+      `SELECT id, timestamp, tool_name, database_name, arguments, query_text, success, error_message, duration_ms, row_count
+       FROM _audit_log ${where} ORDER BY timestamp DESC LIMIT ?`
+    )
+      .bind(...params, limit)
+      .all();
+
+    return {
+      success: true,
+      data: result.results as Record<string, unknown>[],
+      rowCount: result.results.length,
+      database: 'Audit Log',
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return {
+      success: false,
+      error: errorMessage,
+      database: 'Audit Log',
+    };
+  }
 }

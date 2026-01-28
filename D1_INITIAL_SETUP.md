@@ -140,9 +140,9 @@ For the auto-sync workflow in your Municipal-Analytics repository, you'll need t
 
 | Secret Name | Value |
 |-------------|-------|
-| `D1_HOLLY_DATABASE_ID` | Your Holly database ID |
-| `D1_ROCKFORD_DATABASE_ID` | Your Rockford database ID |
-| `D1_HISTORICAL_DATABASE_ID` | Your Historical database ID |
+| `D1_HOLLY_DATABASE_ID` | 90233f51-396f-4952-8150-e00a6838e586 |
+| `D1_ROCKFORD_DATABASE_ID` | df9c2875-6978-405c-b8ef-efffebe35e24 |
+| `D1_HISTORICAL_DATABASE_ID` | 3b88bf40-2f12-4f49-a039-7bbcc10f7d5c |
 
 ## Troubleshooting
 

@@ -72,7 +72,7 @@ npm run deploy
 Wrangler will output your deployment URL:
 ```
 Published municipal-analytics-mcp (1.23s)
-  https://municipal-analytics-mcp.YOUR_SUBDOMAIN.workers.dev
+  https://municipal-analytics-mcp.isaac-kaczor.workers.dev
 ```
 
 **Save this URL** - you'll need it for team configuration.
@@ -82,7 +82,7 @@ Published municipal-analytics-mcp (1.23s)
 Test the deployed server:
 
 ```bash
-curl https://municipal-analytics-mcp.YOUR_SUBDOMAIN.workers.dev/health
+curl https://municipal-analytics-mcp.isaac-kaczor.workers.dev/health
 ```
 
 ## Step 7: Set Up Auto-Sync (Optional but Recommended)

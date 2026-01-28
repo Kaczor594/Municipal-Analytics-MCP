@@ -30,6 +30,11 @@ binding = "HISTORICAL_DB"
 database_name = "historical-budgets"
 database_id = "3b88bf40-2f12-4f49-a039-7bbcc10f7d5c"
 
+[[d1_databases]]
+binding = "AUDIT_DB"
+database_name = "audit-log"
+database_id = "43775c4c-fa3f-4869-b720-7505de294b8c"
+
 # Observability - enables logging and metrics
 [observability]
 enabled = true
