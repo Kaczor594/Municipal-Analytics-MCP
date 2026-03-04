@@ -29,3 +29,7 @@ npm-debug.log*
 
 # TypeScript cache
 *.tsbuildinfo
+
+# Database dumps (large files)
+*.dump.sql
+*_dump.sql

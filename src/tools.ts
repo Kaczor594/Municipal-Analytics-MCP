@@ -80,7 +80,7 @@ export function createTools(): Tool[] {
         properties: {
           database: {
             type: 'string',
-            enum: ['holly', 'rockford', 'historical'],
+            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water'],
             description:
               "Database to query: 'holly' (Holly Data Bronze), 'rockford' (Rockford), or 'historical' (Historical Budgets)",
           },
@@ -97,7 +97,7 @@ export function createTools(): Tool[] {
         properties: {
           database: {
             type: 'string',
-            enum: ['holly', 'rockford', 'historical'],
+            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water'],
             description: 'Database containing the table',
           },
           table: {
@@ -117,7 +117,7 @@ export function createTools(): Tool[] {
         properties: {
           database: {
             type: 'string',
-            enum: ['holly', 'rockford', 'historical'],
+            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water'],
             description:
               "Database to get dictionary for: 'holly' (Village of Holly, MI - water/sewer/budget), 'rockford' (City of Rockford, MI - water/sewer rates), 'historical' (multi-year budget history)",
           },
@@ -139,7 +139,7 @@ export function createTools(): Tool[] {
         properties: {
           database: {
             type: 'string',
-            enum: ['holly', 'rockford', 'historical'],
+            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water'],
             description: 'Database to query',
           },
           table: {
@@ -163,7 +163,7 @@ export function createTools(): Tool[] {
         properties: {
           database: {
             type: 'string',
-            enum: ['holly', 'rockford', 'historical'],
+            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water'],
             description: 'Database to query',
           },
           table: {
@@ -192,7 +192,7 @@ export function createTools(): Tool[] {
         properties: {
           database: {
             type: 'string',
-            enum: ['holly', 'rockford', 'historical'],
+            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water'],
             description: 'Database to search',
           },
           table: {
@@ -220,7 +220,7 @@ export function createTools(): Tool[] {
         properties: {
           database: {
             type: 'string',
-            enum: ['holly', 'rockford', 'historical'],
+            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water'],
             description: 'Database to query',
           },
           table: {
@@ -249,7 +249,7 @@ export function createTools(): Tool[] {
         properties: {
           database: {
             type: 'string',
-            enum: ['holly', 'rockford', 'historical'],
+            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water'],
             description: 'Database to query',
           },
           table: {
@@ -285,7 +285,7 @@ export function createTools(): Tool[] {
         properties: {
           database: {
             type: 'string',
-            enum: ['holly', 'rockford', 'historical'],
+            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water'],
             description: 'Database to query',
           },
           query: {
@@ -441,6 +441,12 @@ function handleGetInstructions() {
         'City of Rockford, MI — water/sewer rate study with billing history, rate schedules, class/meter summaries.',
       historical:
         'Multi-year historical budget data (2004–2026) for Michigan municipalities including Lexington.',
+      cadillac:
+        'City of Cadillac, MI — municipal financial and utility data.',
+      norton_shores:
+        'City of Norton Shores, MI — water/sewer/irrigation billing history (FY2022-25). history_register_data has all charge types (476K rows); water_billing has commodity charges only.',
+      web_water:
+        'WEB Water — detailed billing distribution data with meter reads, charges, usage/base charge splits, and rate codes (FY2024).',
     },
     tableSelectionGuide: {
       'Billing/revenue questions (Holly)': {

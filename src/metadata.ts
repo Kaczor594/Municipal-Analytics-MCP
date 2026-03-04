@@ -744,6 +744,278 @@ export const DATA_DICTIONARY: Record<string, DatabaseMetadata> = {
     },
   },
 
+  cadillac: {
+    municipality: "City of Cadillac",
+    state: "Michigan",
+    description:
+      "City of Cadillac, Michigan — municipal financial and utility data.",
+    fiscalYearConvention:
+      "To be determined. Explore tables to identify fiscal year conventions.",
+    currency: "USD",
+    customerClassCodes: {},
+    tables: {},
+  },
+
+  norton_shores: {
+    municipality: "City of Norton Shores",
+    state: "Michigan",
+    description:
+      "City of Norton Shores, Michigan — water/sewer/irrigation billing data including commodity charges, debt charges, fees, and miscellaneous items. Contains FY2022-23 through FY2024-25 billing history.",
+    fiscalYearConvention:
+      "July 1 – June 30. 'FY2022-23' means July 2022 through June 2023. The fiscal_year column in history_register_data identifies the source fiscal year.",
+    currency: "USD",
+    customerClassCodes: {
+      RE: "Residential",
+      CO: "Commercial",
+      GO: "Government",
+      IN: "Industrial",
+      CH: "Church/Non-Profit",
+      SC: "Special Contract",
+    },
+    tables: {
+      water_billing: {
+        description:
+          "Utility billing transaction records for all Norton Shores water/sewer accounts. Each row is one billing line item. Key table for revenue, usage, and customer analysis.",
+        columns: {
+          account_number: { description: "Unique account identifier" },
+          locationid: { description: "Location ID linking to physical service address" },
+          service_address: { description: "Street address receiving utility service" },
+          name: { description: "Account holder name" },
+          cycle: { description: "Billing cycle number" },
+          section: { description: "Billing section" },
+          route: { description: "Meter reading route" },
+          class: {
+            description: "Customer class code",
+            knownValues: {
+              RE: "Residential",
+              CO: "Commercial",
+              GO: "Government",
+              IN: "Industrial",
+              CH: "Church/Non-Profit",
+              SC: "Special Contract",
+            },
+          },
+          status: { description: "Account status (e.g., Active, Final)" },
+          bill_item_name: {
+            description: "Type of commodity charge on the bill",
+            knownValues: {
+              "WATER COMMODITY": "Water usage charge",
+              "SEWER COMMODITY": "Sewer usage charge",
+              "IRRIG COMMODITY": "Irrigation usage charge",
+            },
+          },
+          trx_type: { description: "Transaction type (e.g., Bill, Adjustment)" },
+          trx_type_detail: { description: "Detailed transaction category" },
+          rate: { description: "Rate code applied to this charge" },
+          billed_usage: { description: "Quantity of utility consumed", unit: "gallons or units" },
+          billed_units: { description: "Number of billing units" },
+          amount: { description: "Dollar amount charged for this line item", unit: "USD" },
+          created: { description: "Date the transaction was created" },
+          posted: { description: "Date the transaction was posted" },
+        },
+      },
+      history_register_data: {
+        description:
+          "Full billing history register for FY2022-23 through FY2024-25 (476K+ rows). Includes all charge types: commodity charges, debt charges, fees, service calls, and miscellaneous. PREFERRED table for comprehensive billing analysis.",
+        columns: {
+          account_number: { description: "Unique account identifier" },
+          locationid: { description: "Location ID linking to physical service address" },
+          service_address: { description: "Street address receiving utility service" },
+          name: { description: "Account holder name" },
+          cycle: { description: "Billing cycle name (e.g., 'E BROADWAY', 'MCCRACKEN')" },
+          section: { description: "Billing section number" },
+          route: { description: "Meter reading route number" },
+          class: {
+            description: "Customer class code",
+            knownValues: {
+              RE: "Residential",
+              CO: "Commercial",
+              GO: "Government",
+              IN: "Industrial",
+              CH: "Church/Non-Profit",
+              SC: "Special Contract",
+            },
+          },
+          status: {
+            description: "Account status",
+            knownValues: {
+              "Active": "Active account",
+              "Final Bill": "Final bill issued",
+              "ACTIVE-CURB STOP OFF": "Active but curb stop is off",
+              "ACTIVE-METER PULLED": "Active but meter pulled",
+              "Inactive-Balance Due": "Inactive with outstanding balance",
+              "Inactive-Credit": "Inactive with credit balance",
+              "Inactive-Paid": "Inactive, fully paid",
+            },
+          },
+          bill_item_name: {
+            description: "Type of charge on the bill",
+            knownValues: {
+              "WATER COMMODITY": "Water usage charge",
+              "SEWER COMMODITY": "Sewer usage charge",
+              "IRRIG COMMODITY": "Irrigation usage charge",
+              "WATER DEBT": "Water infrastructure debt charge",
+              "SEWER DEBT": "Sewer infrastructure debt charge",
+              "IRRIG DEBT": "Irrigation infrastructure debt charge",
+              "Water Debt 2": "Additional water debt charge",
+              "FIRE HYD MAINT FEE": "Fire hydrant maintenance fee",
+              "FIRE HYDRANT USAGE": "Fire hydrant usage charge",
+              "TURN ON": "Service turn-on fee",
+              "Del. turn on fee": "Delinquent turn-on fee",
+              "AFTER HRS SERV CALL": "After-hours service call fee",
+              "CURB STOP REPAIR": "Curb stop repair charge",
+              "WATER METER REPAIR": "Water meter repair charge",
+              "Returned payment": "Returned payment fee",
+              "Unauthorized Use": "Unauthorized use charge",
+              "MISC": "Miscellaneous charge",
+            },
+          },
+          trx_type: { description: "Transaction type (all records are 'Billing')" },
+          trx_type_detail: { description: "Detailed transaction category (e.g., 'Bill Calculated')" },
+          rate: { description: "Rate code applied to this charge" },
+          billed_usage: { description: "Quantity of utility consumed", unit: "gallons or units" },
+          billed_units: { description: "Number of billing units" },
+          amount: { description: "Dollar amount charged for this line item", unit: "USD" },
+          created: { description: "Date/time the transaction was created (ISO format)" },
+          posted: { description: "Date the transaction was posted (ISO format)" },
+          fiscal_year: {
+            description: "Fiscal year the record belongs to",
+            knownValues: {
+              "FY2022-23": "July 2022 – June 2023",
+              "FY2023-24": "July 2023 – June 2024",
+              "FY2024-25": "July 2024 – June 2025",
+            },
+          },
+        },
+      },
+    },
+  },
+
+  web_water: {
+    municipality: "WEB Water",
+    state: "Michigan",
+    description:
+      "WEB Water — detailed billing distribution data including meter reads, charges, usage/base charge splits, rate codes, and service detail. FY2024 data (periods 202310–202409).",
+    fiscalYearConvention:
+      "Period column uses YYYYMM format (e.g., 202310 = October 2023). Year and month columns are also available separately.",
+    currency: "USD",
+    customerClassCodes: {},
+    tables: {
+      billing_detail: {
+        description:
+          "Detailed billing distribution records (204K+ rows). Each row is one billing line item with meter read details, charges broken into usage and base components, and rate/revenue codes.",
+        columns: {
+          account: { description: "Account number identifier" },
+          period: { description: "Billing period in YYYYMM format (e.g., 202310 = October 2023)" },
+          rate: { description: "Rate code (e.g., '08')" },
+          revenue_code: { description: "Revenue classification code (e.g., 'D')" },
+          balance_category: { description: "Balance category (e.g., 'WTR' for water)" },
+          service_offered: { description: "Service offered code (numeric)" },
+          statement_date: { description: "Statement date (ISO format)" },
+          type: { description: "Record type code (e.g., 'R')" },
+          loc_id: { description: "Location ID" },
+          svc_id: { description: "Service ID" },
+          seq: { description: "Sequence number" },
+          noda: { description: "Number of days (billing period length)" },
+          read_code: { description: "Meter read code (A=Actual, M=Manual, S=System, E=Estimated)" },
+          read_date: { description: "Date the meter was read (ISO format)" },
+          meter: { description: "Meter serial number" },
+          grp: { description: "Group code (numeric)" },
+          register_type: { description: "Register type (e.g., 'GAL' for gallons)" },
+          multiplier: { description: "Meter read multiplier" },
+          metered_units: { description: "Metered consumption units" },
+          billed_units: { description: "Units billed to the customer" },
+          charges: { description: "Total charges for this line item", unit: "USD" },
+          tax: { description: "Tax amount", unit: "USD" },
+          rate_rev_code: { description: "Combined rate and revenue code (e.g., 'D-08')" },
+          year: { description: "Billing year extracted from period" },
+          month: { description: "Billing month extracted from period" },
+          usage_charge: { description: "Usage-based portion of charges (non-zero when register_type is present)", unit: "USD" },
+          base_charge: { description: "Base/fixed portion of charges (non-zero when register_type is absent)", unit: "USD" },
+          frequency: { description: "Billing frequency (e.g., 'Monthly')" },
+          units: { description: "Number of units (typically 1)" },
+        },
+      },
+      capex: {
+        description:
+          "Capital expenditure budget projections (FY2019–FY2044). Unpivoted from wide format — one row per line item per year. Source: FY2026 Board-Approved Operations Budget.",
+        columns: {
+          id: { description: "Line item identifier (e.g., '1', '1a', '2')" },
+          item_descriptor: { description: "Description of the capital expenditure item" },
+          category: { description: "Capital expenditure category (e.g., 'Capital Improvements')" },
+          inflation: { description: "Assumed annual inflation rate (e.g., '0.00%', '3.00%')" },
+          year: { description: "Fiscal year (2019–2044)" },
+          amount: { description: "Projected expenditure amount for this year", unit: "USD" },
+        },
+      },
+      opex: {
+        description:
+          "Operating expenditure budget projections (FY2019–FY2044). Unpivoted from wide format — one row per line item per year. Source: FY2026 Board-Approved Operations Budget.",
+        columns: {
+          id: { description: "Line item identifier" },
+          item_descriptor: { description: "GL account code and description (e.g., '60100 INTAKE EXPENSE - LABOR')" },
+          category: { description: "Operating expense category (e.g., 'Other Water Treatment', 'Other Admin')" },
+          inflation: { description: "Assumed annual inflation rate" },
+          variability: { description: "Cost variability percentage (e.g., '0%' = fixed cost)" },
+          year: { description: "Fiscal year (2019–2044)" },
+          amount: { description: "Projected operating expenditure for this year", unit: "USD" },
+        },
+      },
+      debt: {
+        description:
+          "Debt service schedule for current and proposed obligations (FY2019–FY2044). Combined from 'Current' and 'Proposed' sheets. Unpivoted — one row per debt instrument per year. Source: FY2026 Board-Approved Operations Budget.",
+        columns: {
+          id: { description: "Debt instrument identifier" },
+          item_descriptor: { description: "Description of the debt instrument (e.g., 'CoBank Mina Tank T01')" },
+          category: {
+            description: "Debt status category",
+            knownValues: {
+              "Current": "Existing debt obligation",
+              "Proposed": "Planned new debt",
+              "Proposed (Defer pmt yr1)": "Planned debt with first-year payment deferral",
+            },
+          },
+          issue_year: { description: "Year the debt was or will be issued (null for existing pre-model debt)" },
+          amort_period: { description: "Amortization period in years (null for existing pre-model debt)" },
+          principal_amount: { description: "Original principal amount (null for existing pre-model debt)", unit: "USD" },
+          interest_rate: { description: "Annual interest rate (e.g., '4.350%')" },
+          year: { description: "Fiscal year (2019–2044)" },
+          amount: { description: "Annual debt service payment for this year", unit: "USD" },
+        },
+      },
+      revenue: {
+        description:
+          "Revenue projections (FY2019–FY2044). Unpivoted from wide format — one row per revenue line item per year. Source: FY2026 Board-Approved Operations Budget.",
+        columns: {
+          id: { description: "Line item identifier" },
+          item_descriptor: { description: "GL account code and description (e.g., '46100 WATER SALES - MINIMUM REVENUE')" },
+          category: { description: "Revenue category (e.g., 'WEB Water Sales - Minimum Charge', 'Other Operating Revenue')" },
+          in_debt_svc_cov: { description: "Whether this revenue is included in debt service coverage calculations ('yes' or 'no')" },
+          year: { description: "Fiscal year (2019–2044)" },
+          amount: { description: "Projected revenue amount for this year", unit: "USD" },
+        },
+      },
+      billing_fy2025: {
+        description:
+          "Muniworth-formatted billing data for FY2025 (205K+ rows). Account-level billing records with consumption, charges split into fixed and variable components, meter sizes, and billing multipliers (SFE). Periods 1–12 correspond to months within the fiscal year.",
+        columns: {
+          customer_id: { description: "Customer/account identifier" },
+          customer_category: { description: "Customer category code (e.g., 'F-73', 'A-01', 'D-08'). Encodes rate class and area." },
+          frequency: { description: "Billing frequency (e.g., 'Monthly')" },
+          year: { description: "Fiscal year (e.g., 2025)" },
+          period: { description: "Billing period within the fiscal year (1–12)" },
+          consumption: { description: "Water consumption in US gallons (USG)" },
+          total_billed: { description: "Total amount billed for this period", unit: "USD" },
+          billing_multiplier_sfe: { description: "Billing multiplier / Single Family Equivalent (SFE) factor" },
+          meter_size: { description: "Meter size (e.g., '5/8 - 3/4', '1', '1 1/2', '2', '3', '4', '6')" },
+          fixed_charge: { description: "Fixed/base charge component of the bill", unit: "USD" },
+          variable_charge: { description: "Variable/usage-based charge component of the bill", unit: "USD" },
+          meter_read_date: { description: "Date the meter was read (ISO format, converted from Excel serial)" },
+        },
+      },
+    },
+  },
+
   historical: {
     municipality: "Multiple municipalities",
     state: "Michigan",

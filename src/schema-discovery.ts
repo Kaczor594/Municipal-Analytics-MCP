@@ -44,6 +44,7 @@ export async function getDatabaseSchema(
     holly: 'Holly Data Bronze',
     rockford: 'Rockford',
     historical: 'Historical Budgets',
+    cadillac: 'Cadillac',
   };
 
   const tables = await getTables(env, dbName);

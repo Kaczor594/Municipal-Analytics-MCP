@@ -35,6 +35,26 @@ binding = "AUDIT_DB"
 database_name = "audit-log"
 database_id = "43775c4c-fa3f-4869-b720-7505de294b8c"
 
+[[d1_databases]]
+binding = "dailytrack_sync"
+database_name = "dailytrack-sync"
+database_id = "9670dd0c-ab14-4bdc-aa8f-b674da782f63"
+
+[[d1_databases]]
+binding = "CADILLAC_DB"
+database_name = "cadillac"
+database_id = "41bcfc7e-a00e-4864-9d44-4a4ced2c956f"
+
+[[d1_databases]]
+binding = "NORTON_SHORES_DB"
+database_name = "norton-shores-water-billing"
+database_id = "3e9a7e92-8e4c-40ee-aa25-b8072046faaf"
+
+[[d1_databases]]
+binding = "WEB_WATER_DB"
+database_name = "web-water"
+database_id = "85007727-f26c-4743-ab54-e35f152285b7"
+
 # Observability - enables logging and metrics
 [observability]
 enabled = true
