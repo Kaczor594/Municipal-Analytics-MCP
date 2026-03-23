@@ -13,13 +13,14 @@ export interface Env {
   CADILLAC_DB: D1Database;
   NORTON_SHORES_DB: D1Database;
   WEB_WATER_DB: D1Database;
+  MI_F65_DB: D1Database;
   AUDIT_DB: D1Database;
   MAX_RESULT_ROWS?: string;
   QUERY_TIMEOUT_MS?: string;
 }
 
 // Database name mapping
-export type DatabaseName = 'holly' | 'rockford' | 'historical' | 'cadillac' | 'norton_shores' | 'web_water';
+export type DatabaseName = 'holly' | 'rockford' | 'historical' | 'cadillac' | 'norton_shores' | 'web_water' | 'mi_f65';
 
 const DATABASE_DISPLAY_NAMES: Record<DatabaseName, string> = {
   holly: 'Holly Data Bronze',
@@ -28,6 +29,7 @@ const DATABASE_DISPLAY_NAMES: Record<DatabaseName, string> = {
   cadillac: 'Cadillac',
   norton_shores: 'Norton Shores Water Billing',
   web_water: 'WEB Water',
+  mi_f65: 'Michigan F-65 Annual Financial Reports',
 };
 
 // Query result types
@@ -71,6 +73,8 @@ export function getDatabase(env: Env, dbName: DatabaseName): D1Database {
       return env.NORTON_SHORES_DB;
     case 'web_water':
       return env.WEB_WATER_DB;
+    case 'mi_f65':
+      return env.MI_F65_DB;
     default:
       throw new Error(`Unknown database: ${dbName}`);
   }
@@ -310,6 +314,7 @@ export function getAvailableDatabases(): {
     { name: 'cadillac', displayName: 'Cadillac' },
     { name: 'norton_shores', displayName: 'Norton Shores Water Billing' },
     { name: 'web_water', displayName: 'WEB Water' },
+    { name: 'mi_f65', displayName: 'Michigan F-65 Annual Financial Reports' },
   ];
 }
 

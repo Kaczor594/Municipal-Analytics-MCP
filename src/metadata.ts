@@ -1016,6 +1016,225 @@ export const DATA_DICTIONARY: Record<string, DatabaseMetadata> = {
     },
   },
 
+  mi_f65: {
+    municipality: "~1,455 Michigan local government units",
+    state: "Michigan",
+    description:
+      "Michigan F-65 Annual Financial Report data. Standardized financial reporting submitted by local government units (cities, villages, townships) to the Michigan Department of Treasury. Contains revenue, expenditures, balance sheet, and other financing data. Source: data.michigan.gov Socrata API.",
+    fiscalYearConvention:
+      "Fiscal year ending. The 'fy' column contains the fiscal year (e.g., 2023). Most Michigan municipalities use a July 1 – June 30 fiscal year, but some use calendar year or other end dates. The 'fiscalendmonth' column indicates the fiscal year end month.",
+    currency: "USD",
+    customerClassCodes: {},
+    tables: {
+      dashboard_metrics: {
+        description:
+          "Pre-computed financial health indicators from the Michigan Community Financial Dashboard (2010-2026, 459K rows). Contains 21 derived metrics (revenue, expenditure, debt, pension, ratios) for all Michigan local government units across 16 years. Use this table for trend analysis, multi-year comparisons, and financial health assessments. For detailed line-item data, use f65_financial_data instead.",
+        columns: {
+          socrata_id: {
+            description: "Socrata geographic ID (Census FIPS-based, e.g., '0600000US2602760900'). Not needed for most queries.",
+          },
+          name: {
+            description: "Municipality name in uppercase (e.g., 'ONTWA TOWNSHIP', 'CITY OF ROCKFORD'). Use LIKE for searching.",
+          },
+          type: {
+            description: "Unit type in lowercase.",
+            knownValues: {
+              township: "Township",
+              city: "City",
+              village: "Village",
+              county: "County",
+            },
+          },
+          year: {
+            description: "Year of the metric (2010–2026).",
+          },
+          variable: {
+            description: "Machine-readable metric identifier. Use this in WHERE clauses.",
+            knownValues: {
+              population: "Population",
+              total_taxable_value: "Total Taxable Value",
+              property_tax_health: "Total Taxable Value Per Capita",
+              total_general_fund_revenue: "Total General Fund Revenue",
+              total_general_fund_revenues: "Total General Fund Revenue (duplicate key)",
+              total_general_fund_expenditures: "Total General Fund Expenditure",
+              revenue_surplus: "Revenue Surplus (Deficit) — negative = deficit",
+              general_fund_unrestricted_balance: "General Fund Unrestricted Balance",
+              general_fund_health: "General Fund Balance Per Capita",
+              general_fund_ratio: "General Fund Ratio (balance / expenditures)",
+              general_fund_cash_Ratio: "General Fund Cash Ratio",
+              liquidity_ratio: "Liquidity Ratio",
+              governmental_net_position_ratio: "Governmental Net Position Ratio",
+              debt_long_term: "Total Long Term Debt",
+              debt_service: "Debt Service (annual payments)",
+              debt_health: "Debt Per Capita",
+              debt_taxable_value: "Debt as % of Taxable Value",
+              long_term_debt_revenue: "Long Term Debt to Revenue Ratio",
+              unfunded_pension_liability: "Unfunded Pension Liability",
+              pension_health: "Unfunded Pension Liability Per Capita",
+              extraordinary: "Extraordinary/Special Items",
+            },
+          },
+          analytics_desc: {
+            description: "Human-readable metric name (e.g., 'Total General Fund Revenue', 'Debt Per Capita').",
+          },
+          value: {
+            description: "The metric value. Units depend on the variable — USD for dollar amounts, ratio for ratios, count for population.",
+            unit: "varies by metric",
+          },
+          local_unit_id: {
+            description: "Dashboard internal ID for the local unit.",
+          },
+          municode: {
+            description: "Michigan Treasury municipal code. Links to f65_financial_data.municode for cross-table queries.",
+          },
+          entity_type: {
+            description: "Unit type in uppercase.",
+            knownValues: {
+              CITY: "City (~83K rows)",
+              TOWNSHIP: "Township (~284K rows)",
+              VILLAGE: "Village (~66K rows)",
+              COUNTY: "County (~24K rows)",
+              "ISD District": "Intermediate School District (~300 rows)",
+              "LEA District": "Local Education Agency (~970 rows)",
+            },
+          },
+          county_name: {
+            description: "County where the municipality is located (e.g., 'Oakland County', 'Kent County').",
+          },
+          gazetteer_name: {
+            description: "Census gazetteer geographic name.",
+          },
+          row_id: {
+            description: "Composite key: variable + socrata_id + year. Unique per row.",
+          },
+        },
+      },
+      f65_financial_data: {
+        description:
+          "Detailed F-65 line-item financial data (~212K rows, FY2025 only). Each row is one financial line item for one municipality in one fiscal year. IMPORTANT: This table requires careful filtering — always specify a category, and be aware of the fund_group column to avoid mixing actual vs budget figures or double-counting across fund types. For multi-year trends, use dashboard_metrics instead.",
+        columns: {
+          id: {
+            description: "Auto-increment primary key. Not meaningful for analysis.",
+          },
+          municode: {
+            description: "Michigan Treasury municipal code. Unique identifier assigned by the state to each local government unit. Not the same as FIPS codes.",
+          },
+          lu_name: {
+            description: "Local unit name (e.g., 'Holly Village', 'Rockford City', 'Rose Township'). Includes the unit type suffix in most cases.",
+          },
+          lu_nametype: {
+            description: "Local unit type classification.",
+            knownValues: {
+              City: "Incorporated city (~240 units)",
+              Village: "Incorporated village (~204 units)",
+              Township: "Township (~1,010 units)",
+              County: "County (~1 unit in current data)",
+            },
+          },
+          fy: {
+            description: "Fiscal year (e.g., 2023). Represents the year the fiscal period ends.",
+          },
+          field_name: {
+            description: "F-65 form cell reference in T{table}R{row}C{column} format. T=category (1=Revenue, 2=Expenditure, 3=Balance Sheet, 4=Other Financing). R=line item number. C=fund column (2=General Fund, 3=All Other Governmental, 5=Component Units, 6=Government-Wide, 7=Total cross-fund sum). Primarily useful for cross-referencing the official F-65 PDF form.",
+          },
+          category: {
+            description: "REQUIRED FILTER. Financial statement category.",
+            knownValues: {
+              Revenue: "Tax revenue, intergovernmental, charges for services, fines, interest, etc.",
+              Expenditure: "General government, public safety, public works, recreation, debt service, capital outlay, etc.",
+              "Balance Sheet": "Assets, liabilities, and fund equity at fiscal year end.",
+              "Other Financing": "Transfers in/out, bond proceeds, and other non-operating items.",
+            },
+          },
+          fund_group: {
+            description: "Fund classification. Critical for correct analysis — distinguishes actual vs budget and different fund scopes.",
+            knownValues: {
+              "General Fund": "Actual general fund figures (primary operating fund)",
+              "General Fund Final Amended Budget": "Budgeted general fund figures (for budget-to-actual comparison)",
+              "All Other Governmental Funds": "Actuals for special revenue, debt service, capital projects, and other governmental funds",
+              "All Other Governmental Funds Final Amended Budget": "Budget for non-general governmental funds",
+              "Component Units": "Separate legal entities (authorities, commissions, special districts)",
+              "Government-Wide": "Government-wide financial statement figures (accrual basis, not by fund). From standalone C6 rows in the F-65 form.",
+            },
+          },
+          description: {
+            description: "Line item description (e.g., 'Property Taxes', 'Police', 'Total Expenditures'). These are standardized across all municipalities by the F-65 form structure.",
+          },
+          account_number: {
+            description: "Account number from the F-65 form. May be null for some line items.",
+          },
+          notes: {
+            description: "Row type indicator. Important for filtering.",
+            knownValues: {
+              Number: "Actual reported numeric values. DEFAULT — use these for most queries.",
+              "Summary - Number": "Derived calculations (fund balances, net changes, totals). Include these when you need calculated subtotals or fund balance figures.",
+            },
+          },
+          field_data: {
+            description: "The financial value. Stored as text but represents USD amounts. Use CAST(field_data AS REAL) for aggregation. May be '0' or null.",
+            unit: "USD (stored as text)",
+          },
+          fiscalendmonth: {
+            description: "Month number when the fiscal year ends (e.g., 6 = June, 12 = December). Most Michigan municipalities end in June (6).",
+          },
+          source_dataset: {
+            description: "Which Socrata dataset this row came from (county, city, village, township_part1, township_part2).",
+          },
+        },
+      },
+      millage_rates: {
+        description:
+          "Michigan property tax millage rates for 2026 (14,088 rows). Covers all taxing jurisdictions statewide: counties, cities, townships, villages, school districts, ISDs, community colleges, authorities, and special assessments. Source: Michigan Department of Treasury State Equalization e-filing system (eequal.bsasoftware.com). Each row is one millage levy for one taxing entity. Rates are unpivoted — multi-column rate sheets (e.g., School District with 6 rate types) are stored as separate rows per rate type.",
+        columns: {
+          county_name: {
+            description: "County name (e.g., 'Washtenaw', 'Oakland', 'Wayne'). All 83 Michigan counties represented.",
+          },
+          entity_code: {
+            description: "Michigan local unit code (e.g., '810020'). NULL for Authority entities. Matches the coding used in the State Equalization system.",
+          },
+          entity_name: {
+            description: "Name of the taxing entity (e.g., 'Ann Arbor', 'ALLEGAN', 'LIBRARY - ANN ARBOR DIST.', 'ANN ARBOR PUBLIC SCHOOLS').",
+          },
+          entity_type: {
+            description: "Type of taxing entity.",
+            knownValues: {
+              County: "County government levies",
+              City: "Incorporated city levies",
+              Township: "Township levies",
+              Village: "Incorporated village levies",
+              "School District": "K-12 school district levies (6 rate types each)",
+              ISD: "Intermediate School District levies (5 rate types each)",
+              "Community College": "Community college district levies (Operating + Debt)",
+              Authority: "Special authorities — libraries, transit, DDA, fire, EMS, etc.",
+              "Special Assessment": "Special assessment districts (fire, EMS, etc.)",
+            },
+          },
+          millage_category: {
+            description: "The specific levy purpose. Values vary by entity_type. For local units: ALLOC/CHARTER, POLICE, FIRE, PARKS/REC, LIBRARY, ROADS, etc. (226 unique values). For School Districts: HoldHarmless, NonHomestead, Debt, SinkingFund, CommPers, Recreational. For ISDs: Allocated, Vocational, SpecialEd, Debt, Enhancement. For Authorities/Community Colleges: Operating, Debt.",
+          },
+          millage_rate: {
+            description: "Tax rate in mills (dollars per $1,000 of taxable value). For example, 18.0 mills means $18 per $1,000 of taxable value.",
+            unit: "mills",
+          },
+          tax_year: {
+            description: "Tax year (currently 2026 for all rows).",
+          },
+          sheet_source: {
+            description: "Original worksheet the data came from in the source XLS file.",
+            knownValues: {
+              "Local Unit": "County, City, Township, Village levies",
+              School: "K-12 school district levies",
+              ISD: "Intermediate School District levies",
+              "Community College": "Community college levies",
+              Authority: "Library, transit, DDA, fire, EMS, and other authority levies",
+              "Special Assessment": "Special assessment district levies",
+            },
+          },
+        },
+      },
+    },
+  },
+
   historical: {
     municipality: "Multiple municipalities",
     state: "Michigan",

@@ -35,6 +35,7 @@ export type ToolName =
   | 'get_summary_stats'
   | 'query_by_date_range'
   | 'execute_query'
+  | 'query_f65_financials'
   | 'get_audit_log';
 
 // MCP Tool definition interface
@@ -80,7 +81,7 @@ export function createTools(): Tool[] {
         properties: {
           database: {
             type: 'string',
-            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water'],
+            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water', 'mi_f65'],
             description:
               "Database to query: 'holly' (Holly Data Bronze), 'rockford' (Rockford), or 'historical' (Historical Budgets)",
           },
@@ -97,7 +98,7 @@ export function createTools(): Tool[] {
         properties: {
           database: {
             type: 'string',
-            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water'],
+            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water', 'mi_f65'],
             description: 'Database containing the table',
           },
           table: {
@@ -117,7 +118,7 @@ export function createTools(): Tool[] {
         properties: {
           database: {
             type: 'string',
-            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water'],
+            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water', 'mi_f65'],
             description:
               "Database to get dictionary for: 'holly' (Village of Holly, MI - water/sewer/budget), 'rockford' (City of Rockford, MI - water/sewer rates), 'historical' (multi-year budget history)",
           },
@@ -139,7 +140,7 @@ export function createTools(): Tool[] {
         properties: {
           database: {
             type: 'string',
-            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water'],
+            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water', 'mi_f65'],
             description: 'Database to query',
           },
           table: {
@@ -163,7 +164,7 @@ export function createTools(): Tool[] {
         properties: {
           database: {
             type: 'string',
-            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water'],
+            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water', 'mi_f65'],
             description: 'Database to query',
           },
           table: {
@@ -192,7 +193,7 @@ export function createTools(): Tool[] {
         properties: {
           database: {
             type: 'string',
-            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water'],
+            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water', 'mi_f65'],
             description: 'Database to search',
           },
           table: {
@@ -220,7 +221,7 @@ export function createTools(): Tool[] {
         properties: {
           database: {
             type: 'string',
-            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water'],
+            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water', 'mi_f65'],
             description: 'Database to query',
           },
           table: {
@@ -249,7 +250,7 @@ export function createTools(): Tool[] {
         properties: {
           database: {
             type: 'string',
-            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water'],
+            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water', 'mi_f65'],
             description: 'Database to query',
           },
           table: {
@@ -277,6 +278,96 @@ export function createTools(): Tool[] {
       },
     },
     {
+      name: 'query_f65_financials',
+      description:
+        `Query Michigan F-65 Annual Financial Report data for ~1,455 local government units (cities, villages, townships). This database contains standardized financial data submitted annually to Michigan Department of Treasury.
+
+IMPORTANT USAGE NOTES:
+- You MUST always specify a category. Never query without filtering by category.
+- The 'fund_group' column distinguishes actual vs budget figures AND different fund types. Always clarify which fund_group to use.
+- By default, only 'Number' rows (actual reported values) are returned. Set include_summary_rows=true to also get 'Summary - Number' rows (derived calculations like fund balances, net changes).
+- To compare budget vs actual, set compare_budget=true (only works for Revenue and Expenditure categories).
+
+FUND_GROUP VALUES (pick the right one):
+- "General Fund" — Actual general fund figures
+- "General Fund Final Amended Budget" — Budgeted general fund figures
+- "All Other Governmental Funds" — Non-general-fund actuals (special revenue, debt service, capital projects)
+- "All Other Governmental Funds Final Amended Budget" — Budget for non-general funds
+- "Component Units" — Separate legal entities (authorities, commissions)
+- "Government-Wide" — Government-wide financial statement figures (accrual basis, no fund breakdown)
+
+CATEGORY VALUES:
+- "Revenue" — Taxes, licenses, intergovernmental, charges for services, fines, interest
+- "Expenditure" — General government, public safety, public works, recreation, debt service
+- "Balance Sheet" — Assets, liabilities, fund equity at fiscal year end
+- "Other Financing" — Transfers in/out, bond proceeds, other non-operating items
+
+DESCRIPTION EXAMPLES (use description_filter with LIKE patterns):
+- Revenue: "%property tax%", "%state shared%", "%federal%", "%charges for%", "%interest%"
+- Expenditure: "%police%", "%fire%", "%public works%", "%debt service%", "%capital outlay%"
+- Balance Sheet: "%cash%", "%fund balance%", "%accounts payable%"
+
+NOTE: This tool queries the f65_financial_data table (detailed line items, FY2025 only). For multi-year
+trends (2010-2026) and financial health indicators (debt per capita, fund balance ratios, pension
+liabilities, etc.), use execute_query on the 'dashboard_metrics' table in the mi_f65 database.
+For property tax millage rates (2026, all Michigan taxing jurisdictions), use execute_query on the
+'millage_rates' table in the mi_f65 database.
+Example: SELECT year, analytics_desc, value FROM dashboard_metrics WHERE name LIKE '%HOLLY%' AND variable = 'general_fund_health' ORDER BY year
+Example: SELECT entity_name, millage_category, millage_rate FROM millage_rates WHERE entity_name = 'Ann Arbor' AND entity_type = 'City'`,
+      inputSchema: {
+        type: 'object',
+        properties: {
+          municipality: {
+            type: 'string',
+            description: 'Municipality name (e.g., "Holly", "Rockford"). Uses LIKE matching so partial names work. Case-insensitive.',
+          },
+          category: {
+            type: 'string',
+            enum: ['Revenue', 'Expenditure', 'Balance Sheet', 'Other Financing'],
+            description: 'REQUIRED. Financial category to query. Always specify this.',
+          },
+          fund_group: {
+            type: 'string',
+            enum: [
+              'General Fund',
+              'General Fund Final Amended Budget',
+              'All Other Governmental Funds',
+              'All Other Governmental Funds Final Amended Budget',
+              'Component Units',
+              'Government-Wide',
+            ],
+            description: 'Fund group to filter by. If omitted, returns all fund groups (be careful of double-counting between actual and budget rows).',
+          },
+          fiscal_year: {
+            type: 'number',
+            description: 'Fiscal year to filter by (e.g., 2023). If omitted, returns all available years.',
+          },
+          description_filter: {
+            type: 'string',
+            description: 'LIKE pattern to filter the description column (e.g., "%property tax%"). Case-insensitive.',
+          },
+          lu_nametype: {
+            type: 'string',
+            enum: ['City', 'Village', 'Township'],
+            description: 'Filter by local unit type.',
+          },
+          include_summary_rows: {
+            type: 'boolean',
+            description: 'If true, includes "Summary - Number" rows (derived calculations like fund balances). Default: false (only "Number" rows).',
+          },
+          compare_budget: {
+            type: 'boolean',
+            description: 'If true, pivots General Fund actual vs budget side-by-side with variance. Only works for Revenue and Expenditure categories.',
+          },
+          limit: {
+            type: 'number',
+            description: 'Maximum rows to return (default: 200, max: 1000).',
+          },
+        },
+        required: ['category'],
+      },
+    },
+    {
       name: 'execute_query',
       description:
         'Execute a custom read-only SQL SELECT query. For advanced users who need specific queries not covered by other tools.',
@@ -285,7 +376,7 @@ export function createTools(): Tool[] {
         properties: {
           database: {
             type: 'string',
-            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water'],
+            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water', 'mi_f65'],
             description: 'Database to query',
           },
           query: {
@@ -403,6 +494,9 @@ export async function handleToolCall(
         env
       );
 
+    case 'query_f65_financials':
+      return handleQueryF65Financials(args, env);
+
     case 'execute_query':
       return handleExecuteQuery(
         args.database as DatabaseName,
@@ -447,6 +541,8 @@ function handleGetInstructions() {
         'City of Norton Shores, MI — water/sewer/irrigation billing history (FY2022-25). history_register_data has all charge types (476K rows); water_billing has commodity charges only.',
       web_water:
         'WEB Water — detailed billing distribution data with meter reads, charges, usage/base charge splits, and rate codes (FY2024).',
+      mi_f65:
+        'Michigan F-65 Annual Financial Reports — standardized financial data for ~1,455 Michigan local government units (cities, villages, townships). Three tables: f65_financial_data (detailed line items, FY2025), dashboard_metrics (21 financial health indicators, 2010-2026, 459K rows), and millage_rates (2026 property tax millage rates for all Michigan taxing jurisdictions — counties, cities, townships, villages, school districts, ISDs, community colleges, authorities, special assessments; 14K rows). Use query_f65_financials for guided F-65 queries, or execute_query for dashboard_metrics trend analysis and millage rate queries.',
     },
     tableSelectionGuide: {
       'Billing/revenue questions (Holly)': {
@@ -804,6 +900,88 @@ async function handleQueryByDateRange(
   `;
 
   return executeQuery(env, dbName, query, [startDate, endDate]);
+}
+
+async function handleQueryF65Financials(
+  args: Record<string, unknown>,
+  env: Env
+) {
+  const category = args.category as string;
+  const whereClauses: string[] = ['category = ?'];
+  const params: unknown[] = [category];
+
+  // Notes filter: default to only 'Number' rows
+  if (args.include_summary_rows) {
+    whereClauses.push("notes IN ('Number', 'Summary - Number')");
+  } else {
+    whereClauses.push("notes = 'Number'");
+  }
+
+  // Municipality filter
+  if (args.municipality) {
+    whereClauses.push('lu_name LIKE ? COLLATE NOCASE');
+    params.push(`%${args.municipality}%`);
+  }
+
+  // Fund group filter
+  if (args.fund_group) {
+    whereClauses.push('fund_group = ?');
+    params.push(args.fund_group);
+  }
+
+  // Fiscal year filter
+  if (args.fiscal_year) {
+    whereClauses.push('fy = ?');
+    params.push(args.fiscal_year);
+  }
+
+  // Description filter
+  if (args.description_filter) {
+    whereClauses.push('description LIKE ? COLLATE NOCASE');
+    params.push(args.description_filter);
+  }
+
+  // Local unit type filter
+  if (args.lu_nametype) {
+    whereClauses.push('lu_nametype = ?');
+    params.push(args.lu_nametype);
+  }
+
+  const limit = Math.min(Math.max(1, (args.limit as number) || 200), 1000);
+  const whereSql = whereClauses.join(' AND ');
+
+  // Budget vs actual comparison pivot
+  if (args.compare_budget && (category === 'Revenue' || category === 'Expenditure')) {
+    const pivotQuery = `
+      SELECT lu_name, lu_nametype, fy, description,
+        MAX(CASE WHEN fund_group = 'General Fund Final Amended Budget' THEN field_data END) as budget,
+        MAX(CASE WHEN fund_group = 'General Fund' THEN field_data END) as actual,
+        ROUND(
+          CAST(MAX(CASE WHEN fund_group = 'General Fund' THEN field_data END) AS REAL) -
+          CAST(MAX(CASE WHEN fund_group = 'General Fund Final Amended Budget' THEN field_data END) AS REAL),
+          2
+        ) as variance
+      FROM f65_financial_data
+      WHERE ${whereSql}
+        AND fund_group IN ('General Fund', 'General Fund Final Amended Budget')
+      GROUP BY lu_name, lu_nametype, fy, description
+      HAVING budget IS NOT NULL OR actual IS NOT NULL
+      ORDER BY lu_name, fy, description
+      LIMIT ${limit}
+    `;
+    return executeQuery(env, 'mi_f65', pivotQuery, params);
+  }
+
+  // Standard query
+  const query = `
+    SELECT lu_name, lu_nametype, fy, fund_group, description,
+           field_data, notes, account_number
+    FROM f65_financial_data
+    WHERE ${whereSql}
+    ORDER BY lu_name, fy, fund_group, description
+    LIMIT ${limit}
+  `;
+  return executeQuery(env, 'mi_f65', query, params);
 }
 
 async function handleExecuteQuery(

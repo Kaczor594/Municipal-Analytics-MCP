@@ -55,6 +55,11 @@ binding = "WEB_WATER_DB"
 database_name = "web-water"
 database_id = "85007727-f26c-4743-ab54-e35f152285b7"
 
+[[d1_databases]]
+binding = "MI_F65_DB"
+database_name = "mi-f65-financials"
+database_id = "8fb6463f-c114-4556-8d4b-bae63b1f804a"
+
 # Observability - enables logging and metrics
 [observability]
 enabled = true

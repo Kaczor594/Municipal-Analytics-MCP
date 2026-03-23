@@ -45,6 +45,9 @@ export async function getDatabaseSchema(
     rockford: 'Rockford',
     historical: 'Historical Budgets',
     cadillac: 'Cadillac',
+    norton_shores: 'Norton Shores Water Billing',
+    web_water: 'WEB Water',
+    mi_f65: 'Michigan F-65 Annual Financial Reports',
   };
 
   const tables = await getTables(env, dbName);
