@@ -36,6 +36,7 @@ export type ToolName =
   | 'query_by_date_range'
   | 'execute_query'
   | 'query_f65_financials'
+  | 'query_millage_rates'
   | 'get_audit_log';
 
 // MCP Tool definition interface
@@ -368,6 +369,64 @@ Example: SELECT entity_name, millage_category, millage_rate FROM millage_rates W
       },
     },
     {
+      name: 'query_millage_rates',
+      description:
+        `Query Michigan property tax millage rates (2024 and 2026, ~28K rows from 6 source sheets per year). Covers ALL taxing jurisdictions statewide:
+
+ENTITY TYPES (sheet_source → entity_type):
+- "Local Unit" → County, City, Township, Village — individual levy purposes (POLICE, FIRE, LIBRARY, ROADS, PARKS/REC, etc.)
+- "School" → School District — 6 rate types per district: HoldHarmless, NonHomestead, Debt, SinkingFund, CommPers, Recreational
+- "ISD" → ISD (Intermediate School District) — 5 rate types: Allocated, Vocational, SpecialEd, Enhancement, Debt
+- "Community College" → Community College — 2 rate types: Operating, Debt
+- "Authority" → Authority — libraries, transit, DDA, fire, EMS authorities — Operating + Debt rates
+- "Special Assessment" → Special Assessment — fire, EMS, police, roads, drains, etc.
+
+MILLAGE RATE: Expressed in mills (dollars per $1,000 of taxable value). 18.0 mills = $18 per $1,000.
+
+Use this tool for any property tax, millage, or levy questions. You can filter by county, entity name, entity type, sheet source, millage category, or tax year. Omit tax_year to get both years (useful for year-over-year comparisons).`,
+      inputSchema: {
+        type: 'object',
+        properties: {
+          tax_year: {
+            type: 'number',
+            enum: [2024, 2026],
+            description: 'Filter by tax year. Available: 2024, 2026. Omit to return both years.',
+          },
+          county: {
+            type: 'string',
+            description: 'County name filter (uses LIKE matching, case-insensitive). E.g., "Washtenaw", "Oakland".',
+          },
+          entity_name: {
+            type: 'string',
+            description: 'Entity name filter (uses LIKE matching, case-insensitive). E.g., "Ann Arbor", "Holly".',
+          },
+          entity_type: {
+            type: 'string',
+            enum: ['County', 'City', 'Township', 'Village', 'School District', 'ISD', 'Community College', 'Authority', 'Special Assessment'],
+            description: 'Filter by entity type.',
+          },
+          sheet_source: {
+            type: 'string',
+            enum: ['Local Unit', 'School', 'ISD', 'Community College', 'Authority', 'Special Assessment'],
+            description: 'Filter by source data sheet. "Local Unit" = counties/cities/townships/villages. Other values correspond to the entity type.',
+          },
+          millage_category: {
+            type: 'string',
+            description: 'Filter by levy purpose (uses LIKE matching). E.g., "POLICE", "FIRE", "NonHomestead", "Operating", "Debt".',
+          },
+          aggregate_by: {
+            type: 'string',
+            enum: ['county', 'entity', 'entity_type', 'sheet_source', 'category'],
+            description: 'If set, returns SUM and COUNT of millage rates grouped by the specified dimension.',
+          },
+          limit: {
+            type: 'number',
+            description: 'Maximum rows to return (default: 200, max: 1000).',
+          },
+        },
+      },
+    },
+    {
       name: 'execute_query',
       description:
         'Execute a custom read-only SQL SELECT query. For advanced users who need specific queries not covered by other tools.',
@@ -497,6 +556,9 @@ export async function handleToolCall(
     case 'query_f65_financials':
       return handleQueryF65Financials(args, env);
 
+    case 'query_millage_rates':
+      return handleQueryMillageRates(args, env);
+
     case 'execute_query':
       return handleExecuteQuery(
         args.database as DatabaseName,
@@ -595,6 +657,24 @@ function handleGetInstructions() {
       },
       'Water production (Holly)': {
         tables: 'water_pumped_2020_2021 through water_pumped_2024_2025 — daily water production from wells.',
+      },
+      'Property tax millage rates (Statewide)': {
+        primaryTable: 'millage_rates (in mi_f65 database)',
+        description:
+          'Michigan property tax millage rates (2024 & 2026) — ~28K rows covering every taxing jurisdiction statewide. Includes 6 entity types from 6 separate source sheets: Local Units (counties, cities, townships, villages), School Districts (6 rate types: HoldHarmless, NonHomestead, Debt, SinkingFund, CommPers, Recreational), ISDs (5 rate types), Community Colleges (Operating + Debt), Authorities (libraries, transit, DDA, fire, EMS), and Special Assessments. Use query_millage_rates for guided queries, or execute_query on the mi_f65 database for custom SQL.',
+        keyColumns: 'entity_name, entity_type, county_name, millage_category, millage_rate (mills), sheet_source',
+        exampleQueries: [
+          "All levies for a city: query_millage_rates with entity_name='Ann Arbor'",
+          "Total millage by county: execute_query with GROUP BY county_name",
+          "School district rates: query_millage_rates with sheet_source='School'",
+          "Compare authority levies: query_millage_rates with sheet_source='Authority'",
+        ],
+      },
+      'Michigan municipal financial data (Statewide)': {
+        primaryTable: 'dashboard_metrics, f65_financial_data, millage_rates (all in mi_f65 database)',
+        description:
+          'Statewide financial data for ~1,455 Michigan LGUs. dashboard_metrics has 21 pre-computed financial health indicators (2010-2026, 459K rows). f65_financial_data has detailed F-65 line items (FY2025). millage_rates has 2026 property tax rates for all taxing jurisdictions. Use query_f65_financials for F-65 line items, query_millage_rates for tax rates, or execute_query for dashboard_metrics.',
+        keyColumns: 'name/entity_name (municipality), variable (metric type), value (metric amount)',
       },
     },
     importantWarnings: [
@@ -979,6 +1059,81 @@ async function handleQueryF65Financials(
     FROM f65_financial_data
     WHERE ${whereSql}
     ORDER BY lu_name, fy, fund_group, description
+    LIMIT ${limit}
+  `;
+  return executeQuery(env, 'mi_f65', query, params);
+}
+
+async function handleQueryMillageRates(
+  args: Record<string, unknown>,
+  env: Env
+) {
+  const whereClauses: string[] = [];
+  const params: unknown[] = [];
+
+  if (args.tax_year) {
+    whereClauses.push('tax_year = ?');
+    params.push(args.tax_year);
+  }
+  if (args.county) {
+    whereClauses.push('county_name LIKE ? COLLATE NOCASE');
+    params.push(`%${args.county}%`);
+  }
+  if (args.entity_name) {
+    whereClauses.push('entity_name LIKE ? COLLATE NOCASE');
+    params.push(`%${args.entity_name}%`);
+  }
+  if (args.entity_type) {
+    whereClauses.push('entity_type = ?');
+    params.push(args.entity_type);
+  }
+  if (args.sheet_source) {
+    whereClauses.push('sheet_source = ?');
+    params.push(args.sheet_source);
+  }
+  if (args.millage_category) {
+    whereClauses.push('millage_category LIKE ? COLLATE NOCASE');
+    params.push(`%${args.millage_category}%`);
+  }
+
+  const limit = Math.min(Math.max(1, (args.limit as number) || 200), 1000);
+  const whereSQL = whereClauses.length > 0
+    ? 'WHERE ' + whereClauses.join(' AND ')
+    : '';
+
+  // Aggregate mode
+  if (args.aggregate_by) {
+    const groupCol: Record<string, string> = {
+      county: 'county_name',
+      entity: 'entity_name, entity_type',
+      entity_type: 'entity_type',
+      sheet_source: 'sheet_source',
+      category: 'millage_category',
+    };
+    const col = groupCol[args.aggregate_by as string] || 'entity_type';
+    const query = `
+      SELECT ${col},
+             COUNT(*) as levy_count,
+             ROUND(SUM(millage_rate), 4) as total_mills,
+             ROUND(AVG(millage_rate), 4) as avg_mills,
+             ROUND(MIN(millage_rate), 4) as min_mills,
+             ROUND(MAX(millage_rate), 4) as max_mills
+      FROM millage_rates
+      ${whereSQL}
+      GROUP BY ${col}
+      ORDER BY total_mills DESC
+      LIMIT ${limit}
+    `;
+    return executeQuery(env, 'mi_f65', query, params);
+  }
+
+  // Detail mode
+  const query = `
+    SELECT county_name, entity_code, entity_name, entity_type,
+           millage_category, millage_rate, sheet_source
+    FROM millage_rates
+    ${whereSQL}
+    ORDER BY county_name, entity_type, entity_name, millage_category
     LIMIT ${limit}
   `;
   return executeQuery(env, 'mi_f65', query, params);

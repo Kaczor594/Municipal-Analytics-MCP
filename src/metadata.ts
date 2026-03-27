@@ -1184,7 +1184,8 @@ export const DATA_DICTIONARY: Record<string, DatabaseMetadata> = {
       },
       millage_rates: {
         description:
-          "Michigan property tax millage rates for 2026 (14,088 rows). Covers all taxing jurisdictions statewide: counties, cities, townships, villages, school districts, ISDs, community colleges, authorities, and special assessments. Source: Michigan Department of Treasury State Equalization e-filing system (eequal.bsasoftware.com). Each row is one millage levy for one taxing entity. Rates are unpivoted — multi-column rate sheets (e.g., School District with 6 rate types) are stored as separate rows per rate type.",
+          "Michigan property tax millage rates (28,174 rows across 2 tax years: 2024 and 2026, from 6 source sheets each). Covers ALL taxing jurisdictions statewide — not just local units but also school districts, ISDs, community colleges, authorities, and special assessments. Data is from 6 separate worksheets in the Michigan Treasury MillageSearch file, all unified into this single table with the sheet_source column indicating origin. Multi-column rate sheets are unpivoted: School Districts have 6 rows per district (HoldHarmless, NonHomestead, Debt, SinkingFund, CommPers, Recreational), ISDs have 5, etc. Use the query_millage_rates tool for guided access. Use the tax_year column to filter by year or compare rates across years. Row counts per year ~14K: Local Unit (~5,630), School (~5,800), ISD (1,380), Authority (~830), Special Assessment (~255), Community College (~174). Source: Michigan Department of Treasury State Equalization e-filing system (eequal.bsasoftware.com).",
+        category: "Property Tax & Millage",
         columns: {
           county_name: {
             description: "County name (e.g., 'Washtenaw', 'Oakland', 'Wayne'). All 83 Michigan counties represented.",
@@ -1217,7 +1218,7 @@ export const DATA_DICTIONARY: Record<string, DatabaseMetadata> = {
             unit: "mills",
           },
           tax_year: {
-            description: "Tax year (currently 2026 for all rows).",
+            description: "Tax year. Available years: 2024, 2026. Use this to filter by year or compare rates across years.",
           },
           sheet_source: {
             description: "Original worksheet the data came from in the source XLS file.",
