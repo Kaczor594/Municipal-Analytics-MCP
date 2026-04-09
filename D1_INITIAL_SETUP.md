@@ -33,7 +33,7 @@ Run these commands to create the three databases:
 
 ```bash
 # Create Holly database
-wrangler d1 create holly-data-bronze
+wrangler d1 create holly-data-silver
 
 # Create Rockford database
 wrangler d1 create rockford
@@ -45,12 +45,12 @@ wrangler d1 create historical-budgets
 **Important:** Save the output from each command. You'll see something like:
 
 ```
-✅ Successfully created DB 'holly-data-bronze' in region WNAM
+✅ Successfully created DB 'holly-data-silver' in region WNAM
 Created your new D1 database.
 
 [[d1_databases]]
 binding = "DB"
-database_name = "holly-data-bronze"
+database_name = "holly-data-silver"
 database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 ```
 
@@ -63,7 +63,7 @@ Edit `wrangler.toml` and replace the placeholder IDs:
 ```toml
 [[d1_databases]]
 binding = "HOLLY_DB"
-database_name = "holly-data-bronze"
+database_name = "holly-data-silver"
 database_id = "your-actual-holly-database-id-here"
 
 [[d1_databases]]
@@ -85,7 +85,7 @@ First, export your SQLite databases to SQL:
 
 ```bash
 # Export Holly database
-sqlite3 /path/to/databases/Holly_data_bronze.db .dump > holly_dump.sql
+sqlite3 /path/to/databases/holly_data_silver.db .dump > holly_dump.sql
 
 # Export Rockford database
 sqlite3 /path/to/databases/Rockford.db .dump > rockford_dump.sql
@@ -98,7 +98,7 @@ Then import into D1:
 
 ```bash
 # Upload Holly
-wrangler d1 execute holly-data-bronze --remote --file=holly_dump.sql
+wrangler d1 execute holly-data-silver --remote --file=holly_dump.sql
 
 # Upload Rockford
 wrangler d1 execute rockford --remote --file=rockford_dump.sql
@@ -113,7 +113,7 @@ If your databases are small (< 100MB each):
 
 ```bash
 # Upload Holly
-wrangler d1 execute holly-data-bronze --remote --file=/path/to/databases/Holly_data_bronze.db
+wrangler d1 execute holly-data-silver --remote --file=/path/to/databases/holly_data_silver.db
 
 # Upload Rockford
 wrangler d1 execute rockford --remote --file=/path/to/databases/Rockford.db
@@ -128,10 +128,10 @@ Check that the data was uploaded correctly:
 
 ```bash
 # List tables in Holly
-wrangler d1 execute holly-data-bronze --remote --command="SELECT name FROM sqlite_master WHERE type='table'"
+wrangler d1 execute holly-data-silver --remote --command="SELECT name FROM sqlite_master WHERE type='table'"
 
 # Count rows in a table
-wrangler d1 execute holly-data-bronze --remote --command="SELECT COUNT(*) FROM your_table_name"
+wrangler d1 execute holly-data-silver --remote --command="SELECT COUNT(*) FROM your_table_name"
 ```
 
 ## Step 7: Note Your Database IDs
@@ -149,7 +149,7 @@ For the auto-sync workflow in your Municipal-Analytics repository, you'll need t
 ### "Database not found" error
 
 Make sure you're using the correct database name (not the binding name):
-- Use `holly-data-bronze`, not `HOLLY_DB`
+- Use `holly-data-silver`, not `HOLLY_DB`
 - Use `rockford`, not `ROCKFORD_DB`
 - Use `historical-budgets`, not `HISTORICAL_DB`
 

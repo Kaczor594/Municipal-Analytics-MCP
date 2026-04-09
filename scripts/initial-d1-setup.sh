@@ -17,7 +17,7 @@ echo ""
 
 # Configuration - UPDATE THESE PATHS
 DB_SOURCE_DIR="${DB_SOURCE_DIR:-../../databases}"
-HOLLY_DB="${DB_SOURCE_DIR}/Holly_data_bronze.db"
+HOLLY_DB="${DB_SOURCE_DIR}/holly_data_silver.db"
 ROCKFORD_DB="${DB_SOURCE_DIR}/Rockford.db"
 HISTORICAL_DB="${DB_SOURCE_DIR}/historical_budgets.db"
 
@@ -131,7 +131,7 @@ echo ""
 
 # Ask user which databases to upload
 echo "Which databases do you want to upload?"
-echo "1) Holly (Holly_data_bronze.db)"
+echo "1) Holly (holly_data_silver.db)"
 echo "2) Rockford (Rockford.db)"
 echo "3) Historical Budgets (historical_budgets.db)"
 echo "4) All databases"
@@ -141,7 +141,7 @@ read -p "Enter choice (1-5): " choice
 
 case $choice in
     1)
-        upload_database "holly-data-bronze" "$HOLLY_DB"
+        upload_database "holly-data-silver" "$HOLLY_DB"
         ;;
     2)
         upload_database "rockford" "$ROCKFORD_DB"
@@ -150,7 +150,7 @@ case $choice in
         upload_database "historical-budgets" "$HISTORICAL_DB"
         ;;
     4)
-        upload_database "holly-data-bronze" "$HOLLY_DB"
+        upload_database "holly-data-silver" "$HOLLY_DB"
         upload_database "rockford" "$ROCKFORD_DB"
         upload_database "historical-budgets" "$HISTORICAL_DB"
         ;;

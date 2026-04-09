@@ -35,13 +35,13 @@ export interface DatabaseMetadata {
 }
 
 export const DATA_DICTIONARY: Record<string, DatabaseMetadata> = {
-  holly: {
+  holly_silver: {
     municipality: "Village of Holly",
     state: "Michigan",
     description:
-      "Village of Holly, Michigan — water, sewer, and general fund financial data including utility billing history, budgets, capital assets, debt schedules, and water production records.",
+      "Village of Holly, Michigan — consolidated query-ready data: utility billing history, multi-year budgets, rate schedules, capital assets, water production, capital improvement plan, road conditions/costs, and meter data.",
     fiscalYearConvention:
-      "July 1 – June 30. 'FY2025-26' means July 2025 through June 2026. Tables named '25_26' refer to this fiscal year.",
+      "July 1 – June 30. 'FY2025-26' means July 2025 through June 2026.",
     currency: "USD",
     customerClassCodes: {
       RE: "Residential",
@@ -50,142 +50,39 @@ export const DATA_DICTIONARY: Record<string, DatabaseMetadata> = {
       IN: "Industrial",
     },
     tableGroups: {
-      // =====================================================================
-      // QUICK ANSWER VIEWS (Start Here for Natural Language Queries)
-      // These views are optimized for common questions from non-technical users
-      // =====================================================================
-      "Quick Answers": {
-        description: "START HERE. Pre-built views that answer common questions directly. Use these before querying raw tables.",
+      "Quick Answers (Views)": {
+        description: "Pre-built views that answer common questions directly. Use these before querying raw tables.",
         tables: [
-          "current_rates",           // "What are the water/sewer rates?"
-          "current_budget",          // "What's budgeted this year?"
-          "budget_by_fund",          // "Budget by fund?"
-          "customer_counts",         // "How many customers?"
-          "revenue_by_class",        // "Revenue breakdown by customer type?"
-          "revenue_by_jurisdiction", // "Village vs Township revenue?"
+          "current_rates",            // "What are the water/sewer rates?"
+          "current_budget",           // "What's budgeted this year?"
+          "budget_by_fund",           // "Budget by fund?"
           "water_production_summary", // "How much water do we pump?"
-          "all_debt_schedules",      // "What debt do we have?"
-          "assets_summary",          // "What assets do we own?"
-          "table_inventory",         // "What data is available?"
+          "assets_summary",           // "What assets do we own?"
+          "capital_projects",         // "What projects are planned?"
+          "table_inventory",          // "What data is available?"
         ],
       },
-
-      // =====================================================================
-      // REVENUE & BILLING - Questions about money coming in
-      // =====================================================================
-      "Revenue & Billing": {
-        description: "Utility billing data and revenue summaries. Use for questions about customers, usage, revenue, and billing.",
+      "Core Tables": {
+        description: "The 10 consolidated tables in this database.",
         tables: [
-          "history_register_data",   // Raw billing transactions (129K+ rows, indexed)
-          "meter_sizes",             // Account meter configurations
-          "water_class_summary",     // Water revenue by class (RE, CO, SC, IN)
-          "sewer_class_summary",     // Sewer revenue by class
-          "water_government_type_summary", // Water by Village/Township
-          "sewer_government_type_summary", // Sewer by Village/Township
-          "water_item_summary",      // Water by bill item type
-          "sewer_item_summary",      // Sewer by bill item type
-          "water_status_summary",    // Water by account status
-          "sewer_status_summary",    // Sewer by account status
-        ],
-      },
-
-      // =====================================================================
-      // BUDGETS - Questions about spending and appropriations
-      // =====================================================================
-      "Budgets": {
-        description: "Budget data from FY2021 through FY2026. Use for questions about spending, appropriations, and fund balances.",
-        tables: [
-          "budget_final",            // Multi-year consolidated (PREFERRED)
-          "budget_all_funds_2026",   // FY2025-26 all funds combined (formerly 'six_budget')
-          "budget_ytd_2024",         // Year-to-date through 6/30/24 (formerly 'four')
-          "budget_ytd_2025",         // Year-to-date through 6/30/25 (formerly 'five')
-          "general_25_26",           // General Fund FY2025-26
-          "water_25_26",             // Water Fund FY2025-26
-          "sewer_25_26",             // Sewer Fund FY2025-26
-          "refuse_25_26",            // Refuse Fund FY2025-26
-          "major_street_25_26",      // Major Street Fund FY2025-26
-          "local_street_25_26",      // Local Street Fund FY2025-26
-          "lake_improvement_25_26",  // Lake Improvement Fund FY2025-26
-        ],
-      },
-
-      // =====================================================================
-      // OPERATIONS - Water production and rates
-      // =====================================================================
-      "Operations": {
-        description: "Operational data: water production from wells, rate schedules.",
-        tables: [
-          "water_production",        // Consolidated daily production (all years)
-          "rate_schedule",           // Water/sewer rates by fiscal year
-        ],
-      },
-
-      // =====================================================================
-      // CAPITAL & DEBT - Assets, projects, and bond payments
-      // =====================================================================
-      "Capital & Debt": {
-        description: "Capital assets, improvement projects, and debt/bond payment schedules.",
-        tables: [
-          "capital_assets",                  // Fixed asset register
-          "rowe_cip_summary_of_projects",    // Capital improvement projects
-          "rowe_cip_projects_status",        // Project status tracking
-          "rowe_cip_funding_expenditures",   // Project funding
-          "critical_road_improvements_1",    // Road projects list
-          "critical_road_improvements_2",    // Road projects list (cont.)
-          "debt_schedule_2015_go_bond",      // 2015 General Obligation Bond
-          "debt_schedule_wtr_rev_2014",      // 2014 Water Revenue Bond
-          "debt_schedule_wtr_ref_2014",      // 2014 Water Refunding Bond
-          "debt_schedule_cap_imp_2021",      // 2021 Capital Improvement Bond
-        ],
-      },
-
-      // =====================================================================
-      // CUSTOMER ANALYSIS - Service combinations and classifications
-      // =====================================================================
-      "Customer Analysis": {
-        description: "Customer segmentation by service type (water only, sewer only, both, etc.) and location classification.",
-        tables: [
-          "water_users",             // All water service customers
-          "sewer_users",             // All sewer service customers
-          "other_users",             // Customers with other services
-          "water_only_users",        // Water only (no sewer)
-          "sewer_only_users",        // Sewer only (no water)
-          "other_only_users",        // Other services only
-          "service_exclusive_users_summary", // Count by service combination
-          "locationid_government_types",     // Location to jurisdiction mapping
-        ],
-      },
-
-      // =====================================================================
-      // DATA QUALITY - For administrators
-      // =====================================================================
-      "Data Quality": {
-        description: "Data quality tracking and administrative views.",
-        tables: [
-          "data_quality_summary",            // Overview of data issues
-          "missing_government_type_locations", // Locations needing classification
-        ],
-      },
-
-      // =====================================================================
-      // LEGACY TABLES - Original year-by-year tables (use consolidated versions instead)
-      // =====================================================================
-      "Legacy (Use Consolidated Instead)": {
-        description: "Original year-by-year tables. Prefer consolidated tables (water_production, budget_final) for queries.",
-        tables: [
-          "water_pumped_2020_2021", "water_pumped_2021_2022", "water_pumped_2022_2023",
-          "water_pumped_2023_2024", "water_pumped_2024_2025",
-          "as_of_6_30_21", "as_of_6_30_22", "as_of_6_30_23", "as_of_6_30_24", "as_of_6_30_25",
-          "four", "five",  // Legacy names for budget_ytd tables
+          "history_register_data",     // Billing transactions (129K rows)
+          "budget_final",              // Multi-year budget FY2021-2026 (669 rows)
+          "rate_schedule",             // Water/sewer rate tiers (14 rows)
+          "water_production",          // Daily water pumped, all years (60 rows)
+          "capital_assets",            // Fixed asset register (431 rows)
+          "meter_sizes_long",          // Normalized meter data (13K rows)
+          "capital_improvement_plan",  // Consolidated CIP (36 rows)
+          "road_segment_conditions",   // Road segment ratings (96 rows)
+          "road_improvement_costs",    // Road cost line items (273 rows)
+          "locationid_government_types", // Village/Township lookup (2.6K rows)
         ],
       },
     },
     tables: {
-      // --- Billing & Account Data ---
       history_register_data: {
-        category: "Billing & Accounts",
+        category: "Billing & Revenue",
         description:
-          "Detailed utility billing transaction records for all accounts. Each row is one billing line item (e.g., water rate, sewer rate, bond debt charge). Key table for revenue analysis.",
+          "Detailed utility billing transaction records (129,537 rows). Each row is one billing line item. Key table for revenue analysis. Dates converted from Excel serial numbers. Includes government_type (Village/Township) and simple_status (Active/Inactive) derived columns.",
         columns: {
           account_number: { description: "Unique account identifier (format: STREET-NUMBER-UNIT-SEQ)" },
           locationid: { description: "Location ID linking to physical service address" },
@@ -211,220 +108,52 @@ export const DATA_DICTIONARY: Record<string, DatabaseMetadata> = {
           trx_type: { description: "Transaction type (e.g., Bill, Adjustment)" },
           trx_type_detail: { description: "Detailed transaction category" },
           rate: { description: "Rate code applied to this charge" },
-          billed_usage: { description: "Quantity of utility consumed", unit: "gallons (water) or units" },
-          billed_units: { description: "Number of billing units (typically 1000-gallon increments)" },
-          amount: { description: "Dollar amount charged for this line item", unit: "USD" },
-          created: { description: "Date the transaction was created" },
-          posted: { description: "Date the transaction was posted" },
-          simple_status: { description: "Simplified status (Active/Inactive)" },
+          billed_usage: { description: "Quantity of utility consumed (REAL type)", unit: "gallons (water) or units" },
+          billed_units: { description: "Number of billing units (REAL type, typically 1000-gallon increments)" },
+          amount: { description: "Dollar amount charged for this line item (REAL type)", unit: "USD" },
+          created: { description: "Date the transaction was created (converted from Excel serial to YYYY-MM-DD)" },
+          posted: { description: "Date the transaction was posted (converted from Excel serial to YYYY-MM-DD)" },
+          simple_status: {
+            description: "Simplified status derived from status column",
+            knownValues: { Active: "Active account", Inactive: "Any inactive status", Other: "Unclassified" },
+          },
           government_type: {
-            description: "Jurisdictional classification of the account location",
+            description: "Jurisdictional classification derived from parcel number",
             knownValues: { Village: "Within Village of Holly limits", Township: "In surrounding township" },
           },
         },
       },
-      meter_sizes: {
-        description:
-          "Account meter configurations. Each row is one account with up to 4 service meters (water, sewer, etc). Includes current and previous reads, usage, meter type/size, and install dates.",
-        columns: {
-          meter_size: { description: "Physical meter size (e.g., '5/8 or 3/4', '1', '1 1/2', '2' inches)" },
-          current_read: { description: "Current meter reading" },
-          previous_read: { description: "Previous meter reading" },
-          current_usage: { description: "Usage calculated as current_read minus previous_read" },
-        },
-      },
 
-      // --- Class & Usage Summaries ---
-      water_class_summary: {
+      budget_final: {
+        category: "Budgets",
         description:
-          "Water billing summary grouped by customer class (RE, CO, SC, IN). Shows customer count, usage, and revenue by class with percentages.",
-        columns: {
-          class: { description: "Customer class code (RE=Residential, CO=Commercial, SC=Special Contract, IN=Industrial)" },
-          customer_count: { description: "Number of customers in this class" },
-          customer_pct: { description: "Percentage of total customers", unit: "%" },
-          total_billed_usage: { description: "Total gallons billed to this class", unit: "gallons" },
-          total_amount: { description: "Total revenue from this class", unit: "USD" },
-          amount_pct: { description: "Percentage of total revenue", unit: "%" },
-        },
-      },
-      sewer_class_summary: {
-        description: "Sewer billing summary grouped by customer class. Same structure as water_class_summary.",
-      },
-      water_government_type_summary: {
-        description: "Water billing summary grouped by government type (Village vs Township).",
-      },
-      sewer_government_type_summary: {
-        description: "Sewer billing summary grouped by government type (Village vs Township).",
-      },
-      water_item_summary: {
-        description: "Water billing summary grouped by bill item (e.g., Water Rate, Water Bond Debt).",
-      },
-      sewer_item_summary: {
-        description: "Sewer billing summary grouped by bill item.",
-      },
-      water_status_summary: {
-        description: "Water billing summary grouped by account status (Active, Final, etc.).",
-      },
-      sewer_status_summary: {
-        description: "Sewer billing summary grouped by account status.",
-      },
-
-      // --- User Classification ---
-      water_users: { description: "List of location IDs that have water service." },
-      sewer_users: { description: "List of location IDs that have sewer service." },
-      other_users: { description: "List of location IDs that have other services (refuse, etc.)." },
-      water_only_users: { description: "Location IDs with ONLY water service (no sewer)." },
-      sewer_only_users: { description: "Location IDs with ONLY sewer service (no water)." },
-      other_only_users: { description: "Location IDs with ONLY other services." },
-      service_exclusive_users_summary: {
-        description: "Count of users by service combination (water-only, sewer-only, both, etc.).",
-      },
-      locationid_classifications: {
-        description: "Maps location IDs to tax parcel IDs and property classifications.",
-      },
-      locationid_government_types: {
-        description: "Maps location IDs to government type (Village or Township).",
-      },
-      abbr_locationid_government_types: {
-        description: "Abbreviated version of location-to-government-type mapping.",
-      },
-      missing_government_type_locations: {
-        description: "Location IDs that are missing a government type classification — data quality issue tracking.",
-      },
-
-      // --- Budget Tables ---
-      budget_data: {
-        description:
-          "Multi-year budget data with account numbers and amounts from FY2021 through FY2026. Includes revenues and expenditures across all funds.",
+          "Multi-year consolidated budget (669 rows) with amounts from FY2021 through FY2026. All 8 funds combined. Each row is one GL account line item.",
         columns: {
           account_type: {
-            description: "Revenue (R) or Expenditure (E)",
-            knownValues: { R: "Revenue", E: "Expenditure" },
+            description: "Revenue or Expenditure (derived from GL object number: <700=Revenue, >=700=Expenditure)",
+            knownValues: { Revenue: "Revenue line item", Expenditure: "Expenditure line item" },
           },
-          fund_number: { description: "Fund number (e.g., 101=General, 590=Sewer, 591=Water)" },
-          gl_number: { description: "General ledger account number (format: FUND-DEPT-OBJECT)" },
+          fund_number: {
+            description: "Fund number",
+            knownValues: { "101": "General Fund", "202": "Major Street Fund", "203": "Local Street Fund", "401": "Capital Projects Fund", "590": "Sewer Fund", "591": "Water Fund", "592": "Refuse Fund", "593": "Lake Improvement Fund" },
+          },
+          department_number: { description: "Department number within the fund" },
+          object_number: { description: "Object code (3-digit, determines Revenue vs Expenditure)" },
+          gl_number: { description: "Full general ledger account number (format: FUND-DEPT-OBJECT)" },
           description: { description: "Line item description (e.g., 'REAL PROPERTY TAXES')" },
-          amount_2021: { description: "Budget amount for FY2020-21", unit: "USD" },
-          amount_2022: { description: "Budget amount for FY2021-22", unit: "USD" },
-          amount_2023: { description: "Budget amount for FY2022-23", unit: "USD" },
-          amount_2024: { description: "Budget amount for FY2023-24", unit: "USD" },
-          amount_2025: { description: "Budget amount for FY2024-25", unit: "USD" },
+          amount_2021: { description: "Actual/budget amount for FY2020-21", unit: "USD" },
+          amount_2022: { description: "Actual/budget amount for FY2021-22", unit: "USD" },
+          amount_2023: { description: "Actual/budget amount for FY2022-23", unit: "USD" },
+          amount_2024: { description: "Actual/budget amount for FY2023-24", unit: "USD" },
+          amount_2025: { description: "Actual/budget amount for FY2024-25", unit: "USD" },
           amount_2026: { description: "Budget amount for FY2025-26", unit: "USD" },
         },
       },
-      budget_final: {
-        description:
-          "Final approved budget with same structure as budget_data. Use this for official budget figures.",
-      },
-      general_25_26: {
-        description: "General Fund budget for FY2025-26 with prior year comparisons by department and GL account.",
-        columns: {
-          department_name: { description: "Department name (e.g., 'ESTIMATED REVENUES-GENERAL', 'POLICE DEPARTMENT')" },
-          gl_number: { description: "General ledger account number" },
-          description: { description: "Budget line item description" },
-          fy2023_24_amended_budget: { description: "FY2023-24 amended budget", unit: "USD" },
-          fy2024_25_amended_budget: { description: "FY2024-25 amended budget", unit: "USD" },
-          fy2025_26_recommended_budget: { description: "FY2025-26 recommended budget", unit: "USD" },
-        },
-      },
-      water_25_26: {
-        description: "Water Fund budget for FY2025-26 with prior year comparisons. Same structure as general_25_26.",
-      },
-      sewer_25_26: {
-        description: "Sewer Fund budget for FY2025-26 with prior year comparisons. Same structure as general_25_26. NOTE: Columns '...7' through '...10' are empty artifact columns from data import — ignore them.",
-      },
-      refuse_25_26: {
-        description: "Refuse (trash) Fund budget for FY2025-26 with prior year comparisons.",
-      },
-      lake_improvement_25_26: {
-        description: "Lake Improvement Fund budget for FY2025-26 with prior year comparisons.",
-      },
-      local_street_25_26: {
-        description: "Local Street Fund budget for FY2025-26 with prior year comparisons.",
-      },
-      major_street_25_26: {
-        description: "Major Street Fund budget for FY2025-26 with prior year comparisons.",
-      },
-      six_budget: {
-        description: "Budget summary table (likely a sixth fund or supplementary budget view).",
-      },
 
-      // --- Year-End Budget Summaries ---
-      as_of_6_30_21: { description: "Year-end budget summary as of June 30, 2021 (end of FY2020-21)." },
-      as_of_6_30_22: { description: "Year-end budget summary as of June 30, 2022 (end of FY2021-22)." },
-      as_of_6_30_23: { description: "Year-end budget summary as of June 30, 2023 (end of FY2022-23)." },
-      as_of_6_30_24: { description: "Year-end budget summary as of June 30, 2024 (end of FY2023-24)." },
-      as_of_6_30_25: { description: "Year-end budget summary as of June 30, 2025 (end of FY2024-25)." },
-
-      // --- Capital Assets ---
-      capital_assets: {
-        description:
-          "Fixed asset register for Village infrastructure (buildings, equipment, vehicles, etc.). Tracks acquisition, cost, depreciation, and disposals.",
-        columns: {
-          section: { description: "Asset category (e.g., 'Buildings and Building Improvements', 'Equipment')" },
-          asset_number: { description: "Unique asset identifier" },
-          date_acquired: { description: "Date asset was acquired (numeric format)" },
-          description: { description: "Description of the asset" },
-          condition_flag: { description: "Condition flag character (X=confirmed, ?=uncertain)" },
-          extended_desc: { description: "Extended description of the asset" },
-          asset_type: { description: "Asset type code (e.g., B=Building)" },
-          dept_number: { description: "Department code (e.g., GG=General Government, PW=Public Works, F=Fire)" },
-          location: { description: "Physical location of the asset" },
-          useful_life_yrs: { description: "Expected useful life", unit: "years" },
-          cost_at6_30_25: { description: "Asset cost as of June 30, 2025", unit: "USD" },
-          additions: { description: "Asset additions during the year", unit: "USD" },
-          reclassification: { description: "Reclassification adjustments", unit: "USD" },
-          disposals_beginning: { description: "Disposals from beginning cost", unit: "USD" },
-          cost_at_6_30_26: { description: "Asset cost as of June 30, 2026", unit: "USD" },
-          accumulated_depreciation_beginning: { description: "Accumulated depreciation at start of year", unit: "USD" },
-          depreciation_expense: { description: "Annual depreciation expense", unit: "USD" },
-          disposals_depreciation: { description: "Depreciation removed for disposals", unit: "USD" },
-          accumulated_depreciation_ending: { description: "Accumulated depreciation at end of year", unit: "USD" },
-          adjusted_cost_at_6_30_26: { description: "Net book value (cost minus depreciation) at June 30, 2026", unit: "USD" },
-        },
-      },
-
-      // --- Capital Improvement Projects ---
-      critical_road_improvements_1: {
-        description: "Critical road improvement projects list — page 1. Includes project descriptions and estimated costs.",
-      },
-      critical_road_improvements_2: {
-        description: "Critical road improvement projects list — page 2.",
-      },
-      rowe_cip_summary_of_projects: {
-        description: "Rowe Engineering capital improvement plan — summary of all projects.",
-      },
-      rowe_cip_projects_status: {
-        description: "Rowe Engineering CIP — project status tracking.",
-      },
-      rowe_cip_funding_expenditures: {
-        description: "Rowe Engineering CIP — funding sources and expenditure tracking.",
-      },
-
-      // --- Debt Schedules ---
-      debt_schedule_2015_go_bond: {
-        description: "Payment schedule for 2015 General Obligation Bond. Shows fiscal year, payment date, type (principal/interest), and amount.",
-        columns: {
-          fiscal_year_beginning: { description: "Start of fiscal year for this payment" },
-          payment_date: { description: "Actual payment due date" },
-          payment_type: { description: "Principal or Interest" },
-          amount_paid: { description: "Payment amount", unit: "USD" },
-        },
-      },
-      debt_schedule_wtr_rev_2014: {
-        description: "Payment schedule for 2014 Water Revenue Bond.",
-      },
-      debt_schedule_wtr_ref_2014: {
-        description: "Payment schedule for 2014 Water Refunding Bond.",
-      },
-      debt_schedule_cap_imp_2021: {
-        description: "Payment schedule for 2021 Capital Improvement Bond.",
-      },
-
-      // --- Rate Schedule ---
       rate_schedule: {
+        category: "Rates",
         description:
-          "Water and sewer rate schedule by fiscal year. Shows base rates and tiered usage rates (per 1000 gallons) for each customer class.",
+          "Water and sewer rate schedule by fiscal year (14 rows). Shows base rates and tiered usage rates per 1000 gallons.",
         columns: {
           fye_beginning: { description: "Fiscal year start date" },
           fye_ending: { description: "Fiscal year end date" },
@@ -434,217 +163,194 @@ export const DATA_DICTIONARY: Record<string, DatabaseMetadata> = {
         },
       },
 
-      // --- Water Production ---
-      water_pumped_2020_2021: {
-        description: "Daily water production data for FY2020-21. Tracks gallons pumped from wells.",
-        columns: {
-          date: { description: "Date of production record" },
-          avg: { description: "Average daily production", unit: "gallons" },
-          max: { description: "Maximum daily production", unit: "gallons" },
-          total: { description: "Total production for period", unit: "gallons" },
-          million_gallons: { description: "Total production in millions of gallons", unit: "million gallons" },
-        },
-      },
-      water_pumped_2021_2022: { description: "Daily water production data for FY2021-22." },
-      water_pumped_2022_2023: { description: "Daily water production data for FY2022-23." },
-      water_pumped_2023_2024: { description: "Daily water production data for FY2023-24." },
-      water_pumped_2024_2025: { description: "Daily water production data for FY2024-25." },
-
-      // --- Misc (Legacy names) ---
-      four: { description: "LEGACY: Use budget_ytd_2024 instead. Year-to-date budget actuals through June 30, 2024." },
-      five: { description: "LEGACY: Use budget_ytd_2025 instead. Year-to-date budget actuals through June 30, 2025." },
-
-      // =====================================================================
-      // NEW CONSOLIDATED TABLES (Added for Natural Language Query Optimization)
-      // =====================================================================
-
-      // --- Consolidated Water Production ---
       water_production: {
         category: "Operations",
         description:
-          "Consolidated daily water production data from all fiscal years (FY2020-21 through FY2024-25). PREFERRED over individual water_pumped_* tables. Query by fiscal_year or fye columns to filter.",
+          "Daily water production data (60 rows) consolidated from FY2020-21 through FY2024-25. Monthly summaries of gallons pumped from wells.",
         columns: {
-          date: { description: "Date of production record" },
+          date: { description: "Date or month label" },
           avg: { description: "Average daily production", unit: "gallons" },
           max: { description: "Maximum daily production", unit: "gallons" },
           total: { description: "Total production for period", unit: "gallons" },
-          million_gallons: { description: "Total production in millions of gallons", unit: "million gallons" },
+          million_gallons: { description: "Total in millions of gallons", unit: "million gallons" },
           fiscal_year: { description: "Fiscal year label (e.g., '2023-2024')" },
-          fye: { description: "Fiscal year ending (e.g., 2024 means FY2023-24)", unit: "year" },
+          fye: { description: "Fiscal year ending (e.g., 2024 = FY2023-24)", unit: "year" },
         },
       },
 
-      // --- Renamed Budget Tables (Clear names) ---
-      budget_ytd_2024: {
-        category: "Budgets",
-        description: "Year-to-date budget actuals through June 30, 2024. Clearer name for legacy 'four' table.",
-      },
-      budget_ytd_2025: {
-        category: "Budgets",
-        description: "Year-to-date budget actuals through June 30, 2025. Clearer name for legacy 'five' table.",
-      },
-      budget_all_funds_2026: {
-        category: "Budgets",
-        description: "FY2025-26 budget for all funds combined in one table. Clearer name for legacy 'six_budget' table.",
+      capital_assets: {
+        category: "Capital",
+        description:
+          "Fixed asset register (431 rows) for Village infrastructure. Tracks acquisition, cost, depreciation, and disposals as of June 30, 2026.",
         columns: {
-          department_name: { description: "Department or revenue category name" },
-          gl_number: { description: "General ledger account number" },
-          description: { description: "Budget line item description" },
-          amount: { description: "FY2025-26 budgeted amount", unit: "USD" },
-          budget_fund_name: { description: "Fund name (General, Water, Sewer, etc.)" },
+          section: { description: "Asset category (e.g., 'Buildings and Building Improvements', 'Equipment')" },
+          asset_number: { description: "Unique asset identifier" },
+          date_acquired: { description: "Date asset was acquired" },
+          description: { description: "Description of the asset" },
+          condition_flag: { description: "Condition flag character" },
+          extended_desc: { description: "Extended description" },
+          asset_type: { description: "Asset type code (e.g., B=Building)" },
+          dept_number: { description: "Department code (e.g., GG=General Government, PW=Public Works, F=Fire)" },
+          location: { description: "Physical location" },
+          useful_life_yrs: { description: "Expected useful life", unit: "years" },
+          cost_at6_30_25: { description: "Cost as of June 30, 2025", unit: "USD" },
+          additions: { description: "Additions during the year", unit: "USD" },
+          reclassification: { description: "Reclassification adjustments", unit: "USD" },
+          disposals_beginning: { description: "Disposals from beginning cost", unit: "USD" },
+          cost_at_6_30_26: { description: "Cost as of June 30, 2026", unit: "USD" },
+          accumulated_depreciation_beginning: { description: "Accumulated depreciation at start of year", unit: "USD" },
+          depreciation_expense: { description: "Annual depreciation expense", unit: "USD" },
+          disposals_depreciation: { description: "Depreciation removed for disposals", unit: "USD" },
+          accumulated_depreciation_ending: { description: "Accumulated depreciation at end of year", unit: "USD" },
+          adjusted_cost_at_6_30_26: { description: "Net book value at June 30, 2026", unit: "USD" },
         },
       },
 
-      // =====================================================================
-      // SEMANTIC VIEWS (Optimized for Natural Language Queries)
-      // These views match how non-technical users phrase questions
-      // =====================================================================
+      meter_sizes_long: {
+        category: "Billing & Revenue",
+        description:
+          "Normalized meter data (13,030 rows). One row per meter per account — unpivoted from the wide-format meter_sizes table. Includes meter reads, usage, type, size, and install dates.",
+        columns: {
+          location_id: { description: "Location ID linking to service address" },
+          account_number: { description: "Account identifier" },
+          cycle: { description: "Billing cycle" },
+          route_book: { description: "Meter reading route book" },
+          class: { description: "Customer class code (RE/CO/SC/IN)" },
+          status: { description: "Account status" },
+          parcel_number: { description: "Tax parcel number (IH- prefix = Village, I- prefix = Township)" },
+          service_address: { description: "Street address" },
+          record_num: { description: "Meter sequence number within account (1, 2, 3, etc.)" },
+          service_name: { description: "Service type (Water, Sewer, etc.)" },
+          sequence_number: { description: "Meter sequence number" },
+          current_read: { description: "Current meter reading" },
+          previous_read: { description: "Previous meter reading" },
+          current_usage: { description: "Usage = current_read - previous_read" },
+          meter_type: { description: "Meter manufacturer/type" },
+          meter_size: { description: "Physical meter size (e.g., '5/8 or 3/4', '1', '2' inches)" },
+          meter_id: { description: "Meter identifier" },
+          serial_number: { description: "Meter serial number" },
+          install_date: { description: "Meter installation date" },
+        },
+      },
 
-      // --- Rate Views ---
+      capital_improvement_plan: {
+        category: "Capital",
+        description:
+          "Consolidated capital improvement plan (36 rows). Combines budget timeline projects (with fiscal year cost breakdowns) and scored/prioritized projects (with department and evaluation criteria). Use source column to distinguish.",
+        columns: {
+          project: { description: "Project name" },
+          department: { description: "Department (e.g., STREET PROJECTS, PARKS AND RECREATION, WATER SYSTEM IMPROVEMENTS). NULL for budget_timeline rows." },
+          location: { description: "Project location. NULL for project_scoring rows." },
+          funding_source: { description: "Funding source (e.g., General Fund, Grants, Bonding, Water funds)" },
+          anticipated_cost: { description: "Total anticipated cost", unit: "USD" },
+          need: { description: "Priority level (High/Medium). NULL for budget_timeline rows." },
+          fy_2025_2026: { description: "FY2025-26 cost allocation. NULL for project_scoring rows.", unit: "USD" },
+          fy_2026_2027: { description: "FY2026-27 cost allocation", unit: "USD" },
+          fy_2027_2028: { description: "FY2027-28 cost allocation", unit: "USD" },
+          fy_2028_2029: { description: "FY2028-29 cost allocation", unit: "USD" },
+          fy_2029_2030: { description: "FY2029-30 cost allocation", unit: "USD" },
+          total: { description: "Total project cost", unit: "USD" },
+          mandated_by_law: { description: "Yes/No — required by law or court action" },
+          community_aesthetics: { description: "Yes/No — improves community aesthetics" },
+          master_plan_compliance: { description: "Yes/No — complies with village master plan" },
+          public_health_safety: { description: "Yes/No — addresses public health or safety threat" },
+          common_resident_complaint: { description: "Yes/No — addresses common resident complaints" },
+          promotes_commercial_industrial: { description: "Yes/No — promotes commercial/industrial base" },
+          leverages_grants: { description: "Yes/No — leverages grant funding" },
+          source: {
+            description: "Source of the project record",
+            knownValues: { budget_timeline: "From CIP budget timeline (has fiscal year cost breakdowns)", project_scoring: "From CIP scoring matrix (has department and evaluation criteria)" },
+          },
+        },
+      },
+
+      road_segment_conditions: {
+        category: "Infrastructure",
+        description:
+          "Road segment condition survey (96 rows). Each row is one road segment with condition rating, remaining service life, surface type, and proposed treatment.",
+        columns: {
+          segment_name: { description: "Street/road name" },
+          from_description: { description: "Segment start point" },
+          to_description: { description: "Segment end point" },
+          length_miles: { description: "Segment length", unit: "miles" },
+          width_ft: { description: "Road width", unit: "feet" },
+          nfc: { description: "National Functional Classification (Local, Unk, etc.)" },
+          legal_system: { description: "Legal road system (CtyMajSt, CtyMinSt, Undef)" },
+          surface_subtype: { description: "Surface type (Asphalt-Standard, etc.)" },
+          current_rating: { description: "PASER condition rating (1-10 scale, higher=better)" },
+          remaining_service_life: { description: "Remaining service life (negative = past due)", unit: "years" },
+          proposed_treatment: { description: "Recommended treatment (Reconstruct, Mill and Resurface, etc.)" },
+          estimated_cost: { description: "Estimated treatment cost", unit: "USD" },
+        },
+      },
+
+      road_improvement_costs: {
+        category: "Infrastructure",
+        description:
+          "Road improvement line-item cost breakdown (273 rows). Multiple rows per road section showing individual cost components. Linked to road_segment_conditions by segment_name.",
+        columns: {
+          segment_name: { description: "Street/road name (matches road_segment_conditions.segment_name)" },
+          section: { description: "Section description with cross-streets (e.g., '(martha to maple)')" },
+          item: { description: "Cost item type (e.g., Reconstruct, ADA Ramps, Storm Sewer, street name for subtotal)" },
+          length_miles: { description: "Item length", unit: "miles" },
+          item_length_ft: { description: "Item length in feet", unit: "feet" },
+          item_cost: { description: "Unit cost for this item", unit: "USD" },
+          original_new_estimate: { description: "Whether this is an 'original estimate' or 'new estimate'" },
+          cost: { description: "Total cost for this line item", unit: "USD" },
+        },
+      },
+
+      locationid_government_types: {
+        category: "Reference",
+        description:
+          "Maps location IDs to government type (Village or Township). 2,608 rows. Used for JOINs to classify accounts by jurisdiction.",
+        columns: {
+          location_id: { description: "Full location ID" },
+          location_id_abbr: { description: "Abbreviated location ID (without suffix)" },
+          government_type: {
+            description: "Jurisdiction classification",
+            knownValues: { Village: "Within Village of Holly limits", Township: "In surrounding township" },
+          },
+        },
+      },
+
+      // --- Views ---
       current_rates: {
-        category: "Quick Answers",
-        description: "VIEW: Current water and sewer rates (most recent fiscal year only). Use for 'What are the rates?' questions.",
+        category: "Views",
+        description: "VIEW: Current water and sewer rates (most recent fiscal year only).",
       },
       rate_history: {
-        category: "Quick Answers",
+        category: "Views",
         description: "VIEW: All water and sewer rates over time, ordered by most recent first.",
       },
-
-      // --- Revenue Summary Views ---
-      water_revenue_summary: {
-        category: "Quick Answers",
-        description: "VIEW: Alias for water_class_summary. Water revenue breakdown by customer class.",
-      },
-      sewer_revenue_summary: {
-        category: "Quick Answers",
-        description: "VIEW: Alias for sewer_class_summary. Sewer revenue breakdown by customer class.",
-      },
-      revenue_by_class: {
-        category: "Quick Answers",
-        description: "VIEW: Combined water and sewer revenue by customer class (Residential, Commercial, etc.) with human-readable class names.",
-        columns: {
-          service_type: { description: "'Water' or 'Sewer'" },
-          class: { description: "Customer class code (RE, CO, SC, IN)" },
-          class_name: { description: "Human-readable class name (Residential, Commercial, etc.)" },
-          customer_count: { description: "Number of customers" },
-          revenue: { description: "Total revenue", unit: "USD" },
-          revenue_percent: { description: "Percentage of total revenue", unit: "%" },
-        },
-      },
-      revenue_by_jurisdiction: {
-        category: "Quick Answers",
-        description: "VIEW: Water and sewer revenue split by Village vs Township jurisdiction.",
-        columns: {
-          service_type: { description: "'Water' or 'Sewer'" },
-          jurisdiction: { description: "'Village' or 'Township'" },
-          customer_count: { description: "Number of customers" },
-          revenue: { description: "Total revenue", unit: "USD" },
-          revenue_percent: { description: "Percentage of total revenue", unit: "%" },
-        },
-      },
-
-      // --- Budget Views ---
       current_budget: {
-        category: "Quick Answers",
-        description: "VIEW: Current year (FY2025-26) budget with prior year comparison. Shows only items with non-zero current budget.",
+        category: "Views",
+        description: "VIEW: Current year (FY2025-26) budget with prior year comparison.",
         columns: {
-          account_type: { description: "'Revenue' or 'Expenditure'" },
-          fund_number: { description: "Fund number" },
-          gl_number: { description: "General ledger account number" },
-          description: { description: "Budget line item description" },
           current_year_budget: { description: "FY2025-26 budget amount", unit: "USD" },
           prior_year_actual: { description: "FY2024-25 actual amount", unit: "USD" },
           change_from_prior: { description: "Difference from prior year", unit: "USD" },
         },
       },
       budget_by_fund: {
-        category: "Quick Answers",
-        description: "VIEW: Budget totals by fund and account type across all fiscal years (FY2021-2026).",
-        columns: {
-          fund_number: { description: "Fund number" },
-          fund_name: { description: "Human-readable fund name" },
-          account_type: { description: "'Revenue' or 'Expenditure'" },
-          fy2021: { description: "FY2020-21 amount", unit: "USD" },
-          fy2022: { description: "FY2021-22 amount", unit: "USD" },
-          fy2023: { description: "FY2022-23 amount", unit: "USD" },
-          fy2024: { description: "FY2023-24 amount", unit: "USD" },
-          fy2025: { description: "FY2024-25 amount", unit: "USD" },
-          fy2026: { description: "FY2025-26 amount", unit: "USD" },
-        },
+        category: "Views",
+        description: "VIEW: Budget totals by fund and account type across FY2021-2026.",
       },
-
-      // --- Customer Views ---
-      customer_counts: {
-        category: "Quick Answers",
-        description: "VIEW: Simple count of customers by service type (Water, Sewer, Water Only, Sewer Only, Other).",
-        columns: {
-          service_type: { description: "Service category" },
-          customer_count: { description: "Number of customers" },
-        },
-      },
-
-      // --- Operations Views ---
       water_production_summary: {
-        category: "Quick Answers",
+        category: "Views",
         description: "VIEW: Annual water production summary with totals and averages by fiscal year.",
-        columns: {
-          fiscal_year: { description: "Fiscal year label" },
-          fye: { description: "Fiscal year ending" },
-          days_recorded: { description: "Number of days with data" },
-          total_gallons: { description: "Total gallons pumped", unit: "gallons" },
-          avg_daily_gallons: { description: "Average daily production", unit: "gallons" },
-          max_daily_gallons: { description: "Peak daily production", unit: "gallons" },
-        },
-      },
-
-      // --- Capital & Debt Views ---
-      all_debt_schedules: {
-        category: "Quick Answers",
-        description: "VIEW: All bond payment schedules combined into one queryable view. Includes bond name and type.",
-        columns: {
-          bond_name: { description: "Name of the bond (e.g., '2015 GO Bond')" },
-          bond_type: { description: "Type of bond (General Obligation, Revenue, etc.)" },
-          fiscal_year_beginning: { description: "Start of fiscal year for payment" },
-          payment_date: { description: "Payment due date" },
-          payment_type: { description: "'Principal' or 'Interest'" },
-          amount_paid: { description: "Payment amount", unit: "USD" },
-        },
       },
       assets_summary: {
-        category: "Quick Answers",
+        category: "Views",
         description: "VIEW: Capital assets summarized by category with total cost, depreciation, and net book value.",
-        columns: {
-          asset_category: { description: "Asset category (Buildings, Equipment, etc.)" },
-          asset_count: { description: "Number of assets in category" },
-          total_cost: { description: "Total acquisition cost", unit: "USD" },
-          total_depreciation: { description: "Accumulated depreciation", unit: "USD" },
-          net_book_value: { description: "Net book value (cost minus depreciation)", unit: "USD" },
-        },
       },
       capital_projects: {
-        category: "Quick Answers",
-        description: "VIEW: Alias for rowe_cip_summary_of_projects. Capital improvement project list.",
-      },
-
-      // --- Administrative Views ---
-      data_quality_summary: {
-        category: "Data Quality",
-        description: "VIEW: Summary of data quality issues for administrators (missing classifications, null values, etc.).",
-        columns: {
-          issue_type: { description: "Type of data quality issue" },
-          record_count: { description: "Number of affected records" },
-          description: { description: "Description of the issue" },
-        },
+        category: "Views",
+        description: "VIEW: Alias for capital_improvement_plan. All CIP projects.",
       },
       table_inventory: {
-        category: "Quick Answers",
-        description: "VIEW: Master list of key tables with categories, descriptions, and natural language triggers. Use this to understand what data is available.",
-        columns: {
-          table_name: { description: "Name of the table" },
-          category: { description: "Functional category" },
-          description: { description: "What the table contains" },
-          natural_language_triggers: { description: "Keywords that suggest using this table" },
-        },
+        category: "Views",
+        description: "VIEW: Master list of tables with descriptions and natural language triggers.",
       },
     },
   },
@@ -748,12 +454,177 @@ export const DATA_DICTIONARY: Record<string, DatabaseMetadata> = {
     municipality: "City of Cadillac",
     state: "Michigan",
     description:
-      "City of Cadillac, Michigan — municipal financial and utility data.",
+      "City of Cadillac, Michigan — water and sewer utility billing detail. Contains line-item billing records for all metered and flat-rate water and sewer accounts, July 2024 through June 2025.",
     fiscalYearConvention:
-      "To be determined. Explore tables to identify fiscal year conventions.",
+      "July 1 – June 30. Data spans approximately FY2024-25 (posted dates are Excel serial numbers: 45475 = 2024-07-02, 45838 = 2025-06-30).",
     currency: "USD",
-    customerClassCodes: {},
-    tables: {},
+    customerClassCodes: {
+      RRO: "Residential – Regular Owner",
+      ROO: "Residential – Owner Occupied (alternate)",
+      ROOE: "Residential – Owner Occupied (exempt/elderly)",
+      RROE: "Residential – Regular Owner (exempt/elderly)",
+      COM: "Commercial",
+      IND: "Industrial",
+      INS: "Institutional",
+    },
+    tables: {
+      water_detail: {
+        description:
+          "Water billing line items. Each row is one charge line on a water bill. Contains metered usage charges (bill_item_name starting with 'W') and irrigation charges ('I'). 88,119 rows.",
+        columns: {
+          account_number: {
+            description: "Customer account number (e.g., '5151700-008').",
+          },
+          locationid: {
+            description:
+              "Location identifier in format STREET-NUMBER-UNIT (e.g., 'MARB-000330-0000-08').",
+          },
+          service_address: {
+            description: "Service address (street address).",
+          },
+          name: {
+            description: "Customer name on the account.",
+          },
+          cycle: {
+            description:
+              "Billing cycle description. Typically 'Monthly Utility Bill'.",
+          },
+          section: {
+            description: "Billing section (often blank).",
+          },
+          route: {
+            description:
+              "Meter reading route (e.g., 'Route 3', 'Route 5').",
+          },
+          class: {
+            description:
+              "Customer class code. Known values: RRO, ROO, COM, INS, ROOE, IND, RROE.",
+          },
+          status: {
+            description:
+              "Account status. Known values: Active, Inactive-Paid, Inactive-Balance Due, Inactive-Credit, INACTIVE-TURNED OFF, INACTIVE-SEASONAL, INACTIVE-DELINQUENT, INACTIVE-CONDENMED.",
+          },
+          usage: {
+            description:
+              "Usage indicator. Typically 'Usage' for metered consumption lines.",
+          },
+          bill_item_name: {
+            description:
+              "Rate schedule item. Water meters: W1 (5/8\"), W2 (3/4\"), W3 (1\"), W4 (1-1/2\"), W5 (2\"), W6 (3\"), W7 (4\"), W8 (6\"), W9 (8\"). Irrigation meters: I1-I5. Suffix 'RTS' = ready-to-serve (fixed charge); 'Meter' = volumetric charge. 'W: Flat Rate' = flat-rate water.",
+          },
+          trx_type: {
+            description: "Transaction type. All rows are 'Billing'.",
+          },
+          trx_type_detail: {
+            description:
+              "Transaction detail. All rows are 'Bill Calculated'.",
+          },
+          rate: {
+            description:
+              "Rate schedule name corresponding to bill_item_name (e.g., 'W1: 5/8\" Meter Rate').",
+          },
+          billed_usage: {
+            description:
+              "Billed consumption quantity (TEXT). For volumetric lines this is gallons or units consumed; for RTS lines this is 0.",
+          },
+          billed_units: {
+            description:
+              "Number of billing units (TEXT). Typically 1.",
+          },
+          amount: {
+            description:
+              "Dollar amount charged for this line item (TEXT).",
+          },
+          created: {
+            description:
+              "Bill creation timestamp as Excel serial number (e.g., 45475.34 ≈ 2024-07-02).",
+          },
+          posted: {
+            description:
+              "Bill posted date as Excel serial number (integer). Range: 45475 (2024-07-02) to 45838 (2025-06-30).",
+          },
+        },
+      },
+      sewer_detail: {
+        description:
+          "Sewer billing line items. Same structure as water_detail but for sewer charges. Bill items start with 'S' for sewer, 'S99' for LMSA (Lake Mitchell Sewer Authority) charges. Includes flat-rate sewer items. 86,679 rows. Has additional 'usage' column (INTEGER) not present in water_detail.",
+        columns: {
+          account_number: { description: "Customer account number." },
+          locationid: { description: "Location identifier." },
+          service_address: { description: "Service address." },
+          name: { description: "Customer name." },
+          cycle: { description: "Billing cycle description." },
+          section: { description: "Billing section." },
+          route: { description: "Meter reading route." },
+          class: { description: "Customer class code." },
+          status: { description: "Account status." },
+          bill_item_name: {
+            description:
+              "Sewer rate schedule item. S1-S8 by meter size. 'S99: LMSA' = Lake Mitchell Sewer Authority charges. Flat Rate items for unmetered sewer.",
+          },
+          trx_type: { description: "Transaction type ('Billing')." },
+          trx_type_detail: {
+            description: "Transaction detail ('Bill Calculated').",
+          },
+          rate: { description: "Rate schedule name." },
+          billed_usage: { description: "Billed consumption quantity." },
+          billed_units: { description: "Number of billing units." },
+          amount: { description: "Dollar amount charged." },
+          created: {
+            description: "Bill creation timestamp (Excel serial number).",
+          },
+          posted: {
+            description: "Bill posted date (Excel serial number).",
+          },
+          usage: {
+            description:
+              "Usage quantity (INTEGER). Additional column not in water_detail.",
+          },
+        },
+      },
+      utility_detail: {
+        description:
+          "Combined water and sewer billing detail. Union of water_detail and sewer_detail with an additional 'utility_type' column identifying the service. Numeric columns (billed_usage, billed_units, amount) are REAL type here vs TEXT in the individual tables. 174,798 rows.",
+        columns: {
+          account_number: { description: "Customer account number." },
+          locationid: { description: "Location identifier." },
+          service_address: { description: "Service address." },
+          name: { description: "Customer name." },
+          cycle: { description: "Billing cycle description." },
+          section: { description: "Billing section." },
+          route: { description: "Meter reading route." },
+          class: { description: "Customer class code." },
+          status: { description: "Account status." },
+          usage: { description: "Usage indicator." },
+          bill_item_name: {
+            description:
+              "Rate schedule item (water W-prefix or sewer S-prefix).",
+          },
+          trx_type: { description: "Transaction type ('Billing')." },
+          trx_type_detail: {
+            description: "Transaction detail ('Bill Calculated').",
+          },
+          rate: { description: "Rate schedule name." },
+          billed_usage: {
+            description: "Billed consumption quantity (REAL).",
+          },
+          billed_units: {
+            description: "Number of billing units (REAL).",
+          },
+          amount: { description: "Dollar amount charged (REAL)." },
+          created: {
+            description: "Bill creation timestamp (Excel serial number).",
+          },
+          posted: {
+            description: "Bill posted date (Excel serial number).",
+          },
+          utility_type: {
+            description:
+              "Service type: 'water' or 'sewer'. Distinguishes which service the row belongs to.",
+          },
+        },
+      },
+    },
   },
 
   norton_shores: {

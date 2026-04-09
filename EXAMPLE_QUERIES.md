@@ -116,7 +116,7 @@ Here are examples of questions you can ask Claude to query the municipal analyti
 
 ## Date-Based Queries
 
-> "Show records from the as_of_6_30_24 table"
+> "Show records from the budget_final table in Holly"
 
 > "Compare fiscal year 2023 data to fiscal year 2024"
 

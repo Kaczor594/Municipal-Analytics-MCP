@@ -1,6 +1,6 @@
 # Claude Code Handoff — Municipal Analytics MCP Server
 
-> Last updated: 2026-03-23
+> Last updated: 2026-04-09
 > Repo: https://github.com/Kaczor594/Municipal-Analytics-MCP.git
 > Branch: main
 
@@ -12,7 +12,7 @@ A Cloudflare Workers-based MCP (Model Context Protocol) server that provides rea
 
 **Working:**
 - MCP server deployed at `https://municipal-analytics-mcp.isaac-kaczor.workers.dev` serving 7 databases (Holly, Rockford, Historical Budgets, Cadillac, Norton Shores, WEB Water, MI F-65)
-- 13 MCP tools: `get_instructions`, `list_databases`, `list_tables`, `describe_table`, `get_data_dictionary`, `get_recent_records`, `filter_by_column`, `search_records`, `get_summary_stats`, `query_by_date_range`, `execute_query`, `query_f65_financials`, `get_audit_log`
+- 16 MCP tools: `get_instructions`, `list_databases`, `list_tables`, `describe_table`, `get_data_dictionary`, `get_recent_records`, `filter_by_column`, `search_records`, `get_summary_stats`, `query_by_date_range`, `execute_query`, `query_f65_financials`, `query_millage_rates`, `query_dashboard_metrics`, `get_audit_log`, `compare_holly_budgets_yoy`
 - All queries validated read-only (SELECT/WITH/PRAGMA only, forbidden keyword scanning)
 - Results auto-truncated at 1000 rows with `truncated` flag
 - Audit logging to dedicated D1 database (`AUDIT_DB`)
@@ -23,7 +23,7 @@ A Cloudflare Workers-based MCP (Model Context Protocol) server that provides rea
 **MI F-65 Database (mi_f65) — 3 tables in one D1:**
 - `f65_financial_data` (212,362 rows) — F-65 Annual Financial Report line items for ~1,455 Michigan local government units, FY2025 only. Source: data.michigan.gov Socrata API.
 - `dashboard_metrics` (459,154 rows) — 21 pre-computed financial health indicators (revenue, debt, pension, ratios) from the Michigan Community Financial Dashboard, 2010-2026. Source: data.michigan.gov dataset 4eh8-kaka.
-- `millage_rates` (14,088 rows) — 2026 property tax millage rates for all Michigan taxing jurisdictions (counties, cities, townships, villages, school districts, ISDs, community colleges, authorities, special assessments). Source: Michigan Dept of Treasury State Equalization e-filing system (eequal.bsasoftware.com).
+- `millage_rates` (28,174 rows) — 2024 and 2026 property tax millage rates for all Michigan taxing jurisdictions (counties, cities, townships, villages, school districts, ISDs, community colleges, authorities, special assessments). Source: Michigan Dept of Treasury State Equalization e-filing system (eequal.bsasoftware.com).
 
 ## Environment Setup
 
@@ -61,7 +61,7 @@ python3 /Users/isaackaczor/municipal_analytics_workspace/mcp_database_server.py
 2. Add `[[d1_databases]]` binding to `wrangler.toml`
 3. Add to `Env` interface, `DatabaseName` type, `DATABASE_DISPLAY_NAMES`, `getDatabase()` switch, `getAvailableDatabases()` in `src/database.ts`
 4. Add `'new_db'` to all 9 tool enum arrays in `src/tools.ts` (use `replace_all` — they all share the same enum line)
-5. Add to `displayNames` in `src/schema-discovery.ts`
+5. `src/schema-discovery.ts` imports `DATABASE_DISPLAY_NAMES` from `database.ts` — no separate update needed
 6. Add database description to `handleGetInstructions()` in `src/tools.ts`
 7. Add metadata entry to `DATA_DICTIONARY` in `src/metadata.ts`
 8. Upload data: `sqlite3 local.db .dump > dump.sql`, split if >10MB, then `npx wrangler d1 execute <name> --remote --file=batch.sql`
@@ -116,7 +116,7 @@ Audit Log (AUDIT_DB) ← fire-and-forget logging of every tool call
 
 | Binding | Database | Content |
 |---------|----------|---------|
-| `HOLLY_DB` | holly-data-bronze | Holly water/sewer billing, budgets, assets, debt, production |
+| `HOLLY_DB` | holly-data-silver | Holly water/sewer billing, budgets, assets, debt, production (consolidated silver tier) |
 | `ROCKFORD_DB` | rockford | Rockford water/sewer rate study data |
 | `HISTORICAL_DB` | historical-budgets | Multi-municipality budget history 2004-2026 |
 | `CADILLAC_DB` | cadillac | Cadillac water/sewer/utility detail |
@@ -128,7 +128,24 @@ Audit Log (AUDIT_DB) ← fire-and-forget logging of every tool call
 
 ## Recent Changes
 
-**Session 2026-03-23 (this session):**
+**Session 2026-04-09 (cleanup execution):**
+- Executed all 30 items from `.claude/cleanup_report.md`:
+  - Fixed 6 P1 broken references (R scripts, GitHub Actions workflows, VSCode config)
+  - Updated 5 P2 stale references (Python/R scripts, wrangler.toml)
+  - Updated 12 P3 documentation files (handoff docs, setup guides, READMEs)
+  - Extracted P4 shared helpers: `isValidIdentifier()` in database.ts (replaced 7 inline regex), `clampLimit()` in tools.ts (replaced 7 inline patterns), deduplicated `DATABASE_DISPLAY_NAMES` import in schema-discovery.ts
+- Deployed worker version `04e16a72`
+
+**Session 2026-04-09 (silver migration + new tools):**
+- Migrated Holly from bronze to silver tier: `Holly_data_bronze.db` (72 MB, 61 tables) → `holly_data_silver.db` (44 MB, 10 tables + 8 views + 20 indexes)
+- Added `query_dashboard_metrics` tool with structured parameters (variable, municipality, entity_type, county, year/year_start/year_end, aggregate_by)
+- Added full Cadillac metadata to `DATA_DICTIONARY` — 3 tables (water_detail, sewer_detail, utility_detail) with all column descriptions
+- Created D1 database `holly-data-silver` (ID: `7479049a-57dc-4b80-a407-1a99c3115358`), deleted old `holly-data-bronze`
+- Added `query_millage_rates` guided tool, audit logging system with `AUDIT_DB` and `get_audit_log`
+- Updated wrangler 4.60.0 → 4.81.0
+- Deployed worker version `bbdc2455`
+
+**Session 2026-03-23:**
 - Added `mi_f65` database to Cloudflare worker (database.ts, tools.ts, metadata.ts, schema-discovery.ts, wrangler.toml)
 - Created D1 database `mi-f65-financials` (ID: `8fb6463f-c114-4556-8d4b-bae63b1f804a`)
 - Uploaded 3 tables to D1:
@@ -150,21 +167,21 @@ Audit Log (AUDIT_DB) ← fire-and-forget logging of every tool call
 ## Known Issues
 
 - `cadillac_dump.sql` (93MB) is sitting in the repo root untracked. Should add to `.gitignore` before committing.
-- Cadillac metadata in `DATA_DICTIONARY` is a stub (empty tables object). Table descriptions should be added once the data is explored.
 - The `dailytrack_sync` D1 binding exists in `wrangler.toml` but is not exposed through the MCP tools.
 - Wrangler CLI auth tokens expire periodically — re-authenticate with `npx wrangler logout && npx wrangler login` if you get error code 10000.
 - D1 file uploads are limited to ~10MB per batch. Large databases need to be split: `split -l 25000 inserts.sql batches/batch_` and uploaded sequentially.
 - D1 region is WEUR (Western Europe) for most databases. Not configurable after creation.
 - The `line_summary` and `sqlite_sequence` tables exist in the local `mi_f65_financials.db` but were not uploaded to D1 (internal/temporary tables).
-- Millage rate data is a single-year snapshot (2026). Future years would require re-downloading from eequal.bsasoftware.com via guest login.
+- Millage rate data has 2024 and 2026 only. 2025 not yet downloaded. Future years require re-downloading from eequal.bsasoftware.com via guest login.
 
 ## Next Steps
 
-- [ ] Commit and push all uncommitted changes from this session (+420 lines across 5 files)
-- [ ] Add Cadillac table/column metadata to `DATA_DICTIONARY` in `src/metadata.ts`
-- [ ] Upload `Data_Dictionary_Update_Tracker.xlsx` to Google Drive and share with team
+- [x] ~~Add Cadillac table/column metadata~~ — Done (2026-04-09)
+- [x] ~~Add `query_dashboard_metrics` tool~~ — Done (2026-04-09)
+- [x] ~~Add `query_millage_rates` tool~~ — Done (2026-04-09)
+- [x] ~~Update wrangler~~ — Done (4.60.0 → 4.81.0, 2026-04-09)
+- [x] ~~Add D1 indexes~~ — Already existed (confirmed 2026-04-09)
+- [x] ~~Execute cleanup report (30 items)~~ — Done (2026-04-09)
+- [ ] Commit and push all uncommitted changes (12 files modified in MCP repo)
 - [ ] Consider adding Fowlerville database to the MCP server
-- [ ] Update wrangler to latest version (4.60.0 → 4.76.0)
-- [ ] Add indexes to large D1 tables for query performance if needed
-- [ ] Consider adding a dedicated `query_millage_rates` tool (currently queried via `execute_query`)
-- [ ] Consider adding a dedicated `query_dashboard_metrics` tool for guided trend analysis
+- [ ] Download 2025 millage data from eequal.bsasoftware.com

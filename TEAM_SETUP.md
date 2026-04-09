@@ -91,7 +91,7 @@ When Claude Desktop restarts, you should see a small tools icon (hammer/wrench) 
 > What databases are available?
 
 Claude should respond with information about the three databases:
-- Holly Data Bronze
+- Holly Data Silver
 - Rockford
 - Historical Budgets
 

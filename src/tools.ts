@@ -15,12 +15,19 @@ import {
   getAvailableDatabases,
   buildWhereClause,
   queryAuditLog,
+  isValidIdentifier,
 } from './database';
 import {
   getDatabaseMetadata,
   getTableMetadata,
   getColumnMetadata,
 } from './metadata';
+
+// --- Shared Helpers ---
+
+function clampLimit(value: number, max: number): number {
+  return Math.min(Math.max(1, value), max);
+}
 
 // Tool names for type safety
 export type ToolName =
@@ -37,6 +44,7 @@ export type ToolName =
   | 'execute_query'
   | 'query_f65_financials'
   | 'query_millage_rates'
+  | 'query_dashboard_metrics'
   | 'get_audit_log';
 
 // MCP Tool definition interface
@@ -82,9 +90,9 @@ export function createTools(): Tool[] {
         properties: {
           database: {
             type: 'string',
-            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water', 'mi_f65'],
+            enum: ['holly_silver', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water', 'mi_f65'],
             description:
-              "Database to query: 'holly' (Holly Data Bronze), 'rockford' (Rockford), or 'historical' (Historical Budgets)",
+              "Database to query: 'holly_silver' (Holly Data Silver — consolidated billing, budgets, capital assets), 'rockford' (Rockford), or 'historical' (Historical Budgets)",
           },
         },
         required: ['database'],
@@ -99,7 +107,7 @@ export function createTools(): Tool[] {
         properties: {
           database: {
             type: 'string',
-            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water', 'mi_f65'],
+            enum: ['holly_silver', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water', 'mi_f65'],
             description: 'Database containing the table',
           },
           table: {
@@ -119,9 +127,9 @@ export function createTools(): Tool[] {
         properties: {
           database: {
             type: 'string',
-            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water', 'mi_f65'],
+            enum: ['holly_silver', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water', 'mi_f65'],
             description:
-              "Database to get dictionary for: 'holly' (Village of Holly, MI - water/sewer/budget), 'rockford' (City of Rockford, MI - water/sewer rates), 'historical' (multi-year budget history)",
+              "Database to get dictionary for: 'holly_silver' (Village of Holly, MI - consolidated billing, budgets, rates, capital assets, CIP, roads), 'rockford' (City of Rockford, MI - water/sewer rates), 'historical' (multi-year budget history)",
           },
           table: {
             type: 'string',
@@ -141,7 +149,7 @@ export function createTools(): Tool[] {
         properties: {
           database: {
             type: 'string',
-            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water', 'mi_f65'],
+            enum: ['holly_silver', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water', 'mi_f65'],
             description: 'Database to query',
           },
           table: {
@@ -165,7 +173,7 @@ export function createTools(): Tool[] {
         properties: {
           database: {
             type: 'string',
-            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water', 'mi_f65'],
+            enum: ['holly_silver', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water', 'mi_f65'],
             description: 'Database to query',
           },
           table: {
@@ -194,7 +202,7 @@ export function createTools(): Tool[] {
         properties: {
           database: {
             type: 'string',
-            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water', 'mi_f65'],
+            enum: ['holly_silver', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water', 'mi_f65'],
             description: 'Database to search',
           },
           table: {
@@ -222,7 +230,7 @@ export function createTools(): Tool[] {
         properties: {
           database: {
             type: 'string',
-            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water', 'mi_f65'],
+            enum: ['holly_silver', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water', 'mi_f65'],
             description: 'Database to query',
           },
           table: {
@@ -251,7 +259,7 @@ export function createTools(): Tool[] {
         properties: {
           database: {
             type: 'string',
-            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water', 'mi_f65'],
+            enum: ['holly_silver', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water', 'mi_f65'],
             description: 'Database to query',
           },
           table: {
@@ -427,6 +435,64 @@ Use this tool for any property tax, millage, or levy questions. You can filter b
       },
     },
     {
+      name: 'query_dashboard_metrics',
+      description:
+        'Query Michigan Community Financial Dashboard metrics (459K rows, 2010–2026). 21 pre-computed financial health indicators for ~1,455 local government units. Use for financial health comparisons, trend analysis, and benchmarking across municipalities.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          variable: {
+            type: 'string',
+            enum: [
+              'general_fund_ratio', 'general_fund_health', 'general_fund_cash_Ratio',
+              'general_fund_unrestricted_balance', 'total_general_fund_revenue',
+              'total_general_fund_revenues', 'total_general_fund_expenditures',
+              'revenue_surplus', 'liquidity_ratio', 'governmental_net_position_ratio',
+              'debt_health', 'debt_long_term', 'debt_service', 'debt_taxable_value',
+              'long_term_debt_revenue', 'pension_health', 'unfunded_pension_liability',
+              'property_tax_health', 'total_taxable_value', 'population', 'extraordinary',
+            ],
+            description:
+              'Financial indicator to query. General fund: general_fund_ratio (fund balance / expenditures), general_fund_health (fund balance per capita), general_fund_cash_Ratio, liquidity_ratio, revenue_surplus. Debt: debt_health, debt_long_term, debt_service, debt_taxable_value, long_term_debt_revenue. Pension: pension_health, unfunded_pension_liability. Property tax: property_tax_health, total_taxable_value. Other: population, extraordinary, governmental_net_position_ratio.',
+          },
+          municipality: {
+            type: 'string',
+            description: 'Municipality name filter (LIKE matching, case-insensitive). Maps to the "name" column. E.g., "Holly", "Cadillac", "Ann Arbor".',
+          },
+          entity_type: {
+            type: 'string',
+            enum: ['CITY', 'COUNTY', 'TOWNSHIP', 'VILLAGE', 'ISD District', 'LEA District'],
+            description: 'Filter by entity type.',
+          },
+          county: {
+            type: 'string',
+            description: 'County name filter (LIKE matching, case-insensitive). E.g., "Oakland", "Wexford".',
+          },
+          year: {
+            type: 'number',
+            description: 'Single year filter (2010–2026). Use year_start/year_end for ranges.',
+          },
+          year_start: {
+            type: 'number',
+            description: 'Start of year range (inclusive). Use with year_end for trend queries.',
+          },
+          year_end: {
+            type: 'number',
+            description: 'End of year range (inclusive). Use with year_start for trend queries.',
+          },
+          aggregate_by: {
+            type: 'string',
+            enum: ['county', 'entity_type', 'year'],
+            description: 'If set, returns AVG/MIN/MAX/COUNT of the metric grouped by the specified dimension.',
+          },
+          limit: {
+            type: 'number',
+            description: 'Maximum rows to return (default: 200, max: 1000).',
+          },
+        },
+      },
+    },
+    {
       name: 'execute_query',
       description:
         'Execute a custom read-only SQL SELECT query. For advanced users who need specific queries not covered by other tools.',
@@ -435,7 +501,7 @@ Use this tool for any property tax, millage, or levy questions. You can filter b
         properties: {
           database: {
             type: 'string',
-            enum: ['holly', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water', 'mi_f65'],
+            enum: ['holly_silver', 'rockford', 'historical', 'cadillac', 'norton_shores', 'web_water', 'mi_f65'],
             description: 'Database to query',
           },
           query: {
@@ -559,6 +625,9 @@ export async function handleToolCall(
     case 'query_millage_rates':
       return handleQueryMillageRates(args, env);
 
+    case 'query_dashboard_metrics':
+      return handleQueryDashboardMetrics(args, env);
+
     case 'execute_query':
       return handleExecuteQuery(
         args.database as DatabaseName,
@@ -591,8 +660,8 @@ function handleGetInstructions() {
       '3. Use execute_query for complex analysis, or the simpler tools (filter_by_column, get_summary_stats) for basic lookups.',
     ],
     databases: {
-      holly:
-        'Village of Holly, MI — water/sewer billing, budgets, capital assets, debt schedules, water production.',
+      holly_silver:
+        'Village of Holly, MI — consolidated query-ready data: billing history (129K rows), multi-year budgets (FY2021-2026), rate schedules, capital assets, water production, CIP plan, road conditions/costs, meter data.',
       rockford:
         'City of Rockford, MI — water/sewer rate study with billing history, rate schedules, class/meter summaries.',
       historical:
@@ -604,14 +673,14 @@ function handleGetInstructions() {
       web_water:
         'WEB Water — detailed billing distribution data with meter reads, charges, usage/base charge splits, and rate codes (FY2024).',
       mi_f65:
-        'Michigan F-65 Annual Financial Reports — standardized financial data for ~1,455 Michigan local government units (cities, villages, townships). Three tables: f65_financial_data (detailed line items, FY2025), dashboard_metrics (21 financial health indicators, 2010-2026, 459K rows), and millage_rates (2026 property tax millage rates for all Michigan taxing jurisdictions — counties, cities, townships, villages, school districts, ISDs, community colleges, authorities, special assessments; 14K rows). Use query_f65_financials for guided F-65 queries, or execute_query for dashboard_metrics trend analysis and millage rate queries.',
+        'Michigan F-65 Annual Financial Reports — standardized financial data for ~1,455 Michigan local government units (cities, villages, townships). Three tables: f65_financial_data (detailed line items, FY2025), dashboard_metrics (21 financial health indicators, 2010-2026, 459K rows), and millage_rates (property tax millage rates for all Michigan taxing jurisdictions, 2024 & 2026, 28K rows). Use query_f65_financials for F-65 line items, query_dashboard_metrics for financial health indicators, and query_millage_rates for tax rates.',
     },
     tableSelectionGuide: {
       'Billing/revenue questions (Holly)': {
-        primaryTable: 'history_register_data',
+        primaryTable: 'history_register_data (holly_silver)',
         description:
-          'Detailed billing transactions. Use for: total revenue, revenue by class/service/customer, billing trends.',
-        keyColumns: 'bill_item_name (service type), class (RE/CO/SC/IN), amount (USD), billed_usage, government_type',
+          'Detailed billing transactions (129K rows). Use for: total revenue, revenue by class/service/customer, billing trends.',
+        keyColumns: 'bill_item_name (service type), class (RE/CO/SC/IN), amount (USD), billed_usage, government_type, simple_status',
       },
       'Billing/revenue questions (Rockford)': {
         primaryTable: 'rockford_hrd',
@@ -619,20 +688,18 @@ function handleGetInstructions() {
           'Combined billing with meter sizes. Use for: revenue analysis by class, meter size, or rate code.',
         keyColumns: 'rate (service description), class, amount, billed_usage, meter_size, fye (fiscal year)',
       },
-      'Pre-computed summaries': {
+      'Pre-computed summaries (Rockford)': {
         tables: [
-          'water_class_summary / sewer_class_summary — totals by customer class',
-          'water_government_type_summary / sewer_government_type_summary — totals by Village/Township (Holly only)',
-          'fye_YYYY_water_class_summary / fye_YYYY_sewer_class_summary — by class per fiscal year (Rockford)',
-          'fye_YYYY_water_meter_summary / fye_YYYY_sewer_meter_summary — by meter size per fiscal year (Rockford)',
+          'fye_YYYY_water_class_summary / fye_YYYY_sewer_class_summary — by class per fiscal year',
+          'fye_YYYY_water_meter_summary / fye_YYYY_sewer_meter_summary — by meter size per fiscal year',
         ],
-        note: 'These are faster than querying raw billing data. Use them when they answer the question directly.',
+        note: 'Rockford has pre-computed summary tables. For Holly, query history_register_data directly with GROUP BY.',
       },
       'Budget questions (Holly)': {
-        primaryTable: 'budget_data',
+        primaryTable: 'budget_final (holly_silver)',
         description:
-          'Multi-year budget (FY2021–2026) with GL account detail. For single-year budgets, use general_25_26, water_25_26, sewer_25_26, etc.',
-        keyColumns: 'gl_number, description, amount_2021 through amount_2026, fund_number, account_type',
+          'Multi-year consolidated budget (FY2021–2026) with GL account detail. All funds combined into one table.',
+        keyColumns: 'gl_number, description, amount_2021 through amount_2026, fund_number, department_number, object_number, account_type (Revenue/Expenditure)',
       },
       'Budget questions (Historical)': {
         primaryTable: 'historical_budget_data',
@@ -641,22 +708,27 @@ function handleGetInstructions() {
         keyColumns: 'model_name, fund_name, description, amount_2004 through amount_2026, Assumption',
       },
       'Rate schedules': {
-        holly: 'rate_schedule — current rate tiers by fiscal year',
+        holly_silver: 'rate_schedule — water/sewer rate tiers by fiscal year',
         rockford: 'rate_schedule_history — historical rates FY2012–2026 by meter size and service type',
       },
       'Customer/account lookups': {
-        holly: 'meter_sizes — account details with meter info. history_register_data — billing by account.',
+        holly_silver: 'meter_sizes_long — normalized meter data (one row per meter per account). history_register_data — billing by account.',
         rockford: 'rockford_hrd — billing by account with meter size.',
       },
       'Capital assets (Holly)': {
-        table: 'capital_assets',
+        table: 'capital_assets (holly_silver)',
         description: 'Fixed asset register with cost, depreciation, and net book value.',
       },
-      'Debt schedules (Holly)': {
-        tables: 'debt_schedule_2015_go_bond, debt_schedule_wtr_rev_2014, debt_schedule_wtr_ref_2014, debt_schedule_cap_imp_2021',
+      'Capital improvement plan (Holly)': {
+        table: 'capital_improvement_plan (holly_silver)',
+        description: 'Consolidated CIP with budget timelines and project scoring criteria. source=budget_timeline for fiscal year cost breakdowns, source=project_scoring for priority/criteria.',
+      },
+      'Road conditions and costs (Holly)': {
+        tables: 'road_segment_conditions (96 segments with ratings/RSL), road_improvement_costs (273 line-item costs). Both in holly_silver. Linked by segment_name.',
       },
       'Water production (Holly)': {
-        tables: 'water_pumped_2020_2021 through water_pumped_2024_2025 — daily water production from wells.',
+        table: 'water_production (holly_silver)',
+        description: 'Unified daily water production from wells, FY2020-21 through FY2024-25. Use fiscal_year or fye columns to filter by year.',
       },
       'Property tax millage rates (Statewide)': {
         primaryTable: 'millage_rates (in mi_f65 database)',
@@ -673,20 +745,20 @@ function handleGetInstructions() {
       'Michigan municipal financial data (Statewide)': {
         primaryTable: 'dashboard_metrics, f65_financial_data, millage_rates (all in mi_f65 database)',
         description:
-          'Statewide financial data for ~1,455 Michigan LGUs. dashboard_metrics has 21 pre-computed financial health indicators (2010-2026, 459K rows). f65_financial_data has detailed F-65 line items (FY2025). millage_rates has 2026 property tax rates for all taxing jurisdictions. Use query_f65_financials for F-65 line items, query_millage_rates for tax rates, or execute_query for dashboard_metrics.',
+          'Statewide financial data for ~1,455 Michigan LGUs. Use query_dashboard_metrics for financial health indicators (21 metrics, 2010-2026), query_f65_financials for F-65 line items (FY2025), and query_millage_rates for tax rates (2024 & 2026).',
         keyColumns: 'name/entity_name (municipality), variable (metric type), value (metric amount)',
       },
     },
     importantWarnings: [
       'NUMERIC DATA: Most numeric columns (amount, billed_usage, billed_units, budget amounts) are now stored as REAL. You can use SUM/AVG directly without CAST. However, the rate_schedule_history table (Rockford) and historical_budget_data amount columns may still be TEXT — use CAST(column AS REAL) if aggregation returns unexpected results.',
-      'FISCAL YEARS: Holly and Rockford use July 1 – June 30 fiscal years. "FY2025-26" = July 2025 to June 2026. Budget tables ending in _25_26 are for FY2025-26.',
+      'FISCAL YEARS: Holly and Rockford use July 1 – June 30 fiscal years. "FY2025-26" = July 2025 to June 2026.',
       'CUSTOMER CLASSES: Holly uses codes (RE=Residential, CO=Commercial, SC=Special Contract, IN=Industrial). Rockford uses full names (Residential, Commercial, Industrial).',
       'NULL VALUES: Some columns have NULL or empty values. Use COALESCE or IS NOT NULL filters when aggregating.',
     ],
     tips: [
       'Use pre-computed summary tables when available — they are faster and already aggregated correctly.',
       'When querying history_register_data, filter by bill_item_name to isolate water vs sewer charges.',
-      'For year-over-year comparisons, budget_data has amounts for FY2021–2026 in a single row per GL account.',
+      'For year-over-year comparisons, budget_final (holly_silver) has amounts for FY2021–2026 in a single row per GL account.',
       'Call get_data_dictionary with a specific table name to see detailed column descriptions before writing complex queries.',
     ],
   };
@@ -819,10 +891,10 @@ async function handleGetRecentRecords(
   env: Env
 ) {
   // Validate and cap limit
-  const safeLimit = Math.min(Math.max(1, limit), 100);
+  const safeLimit = clampLimit(limit, 100);
 
   // Validate table name
-  if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(tableName)) {
+  if (!isValidIdentifier(tableName)) {
     throw new Error('Invalid table name');
   }
 
@@ -838,11 +910,11 @@ async function handleFilterByColumn(
   env: Env
 ) {
   // Validate table name
-  if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(tableName)) {
+  if (!isValidIdentifier(tableName)) {
     throw new Error('Invalid table name');
   }
 
-  const safeLimit = Math.min(Math.max(1, limit), 500);
+  const safeLimit = clampLimit(limit, 500);
   const { clause, params } = buildWhereClause(filters);
 
   const query = `SELECT * FROM "${tableName}" ${clause} LIMIT ${safeLimit}`;
@@ -857,7 +929,7 @@ async function handleSearchRecords(
   env: Env
 ) {
   // Validate table name
-  if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(tableName)) {
+  if (!isValidIdentifier(tableName)) {
     throw new Error('Invalid table name');
   }
 
@@ -883,7 +955,7 @@ async function handleSearchRecords(
   );
   const params = textColumns.map(() => `%${searchTerm}%`);
 
-  const safeLimit = Math.min(Math.max(1, limit), 200);
+  const safeLimit = clampLimit(limit, 200);
   const query = `SELECT * FROM "${tableName}" WHERE ${conditions.join(' OR ')} LIMIT ${safeLimit}`;
 
   return executeQuery(env, dbName, query, params);
@@ -897,7 +969,7 @@ async function handleGetSummaryStats(
   env: Env
 ) {
   // Validate table name
-  if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(tableName)) {
+  if (!isValidIdentifier(tableName)) {
     throw new Error('Invalid table name');
   }
 
@@ -957,10 +1029,10 @@ async function handleQueryByDateRange(
   env: Env
 ) {
   // Validate table and column names
-  if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(tableName)) {
+  if (!isValidIdentifier(tableName)) {
     throw new Error('Invalid table name');
   }
-  if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(dateColumn)) {
+  if (!isValidIdentifier(dateColumn)) {
     throw new Error('Invalid column name');
   }
 
@@ -970,7 +1042,7 @@ async function handleQueryByDateRange(
     throw new Error('Invalid date format. Use YYYY-MM-DD');
   }
 
-  const safeLimit = Math.min(Math.max(1, limit), 500);
+  const safeLimit = clampLimit(limit, 500);
 
   const query = `
     SELECT * FROM "${tableName}"
@@ -1027,7 +1099,7 @@ async function handleQueryF65Financials(
     params.push(args.lu_nametype);
   }
 
-  const limit = Math.min(Math.max(1, (args.limit as number) || 200), 1000);
+  const limit = clampLimit((args.limit as number) || 200, 1000);
   const whereSql = whereClauses.join(' AND ');
 
   // Budget vs actual comparison pivot
@@ -1096,7 +1168,7 @@ async function handleQueryMillageRates(
     params.push(`%${args.millage_category}%`);
   }
 
-  const limit = Math.min(Math.max(1, (args.limit as number) || 200), 1000);
+  const limit = clampLimit((args.limit as number) || 200, 1000);
   const whereSQL = whereClauses.length > 0
     ? 'WHERE ' + whereClauses.join(' AND ')
     : '';
@@ -1134,6 +1206,82 @@ async function handleQueryMillageRates(
     FROM millage_rates
     ${whereSQL}
     ORDER BY county_name, entity_type, entity_name, millage_category
+    LIMIT ${limit}
+  `;
+  return executeQuery(env, 'mi_f65', query, params);
+}
+
+async function handleQueryDashboardMetrics(
+  args: Record<string, unknown>,
+  env: Env
+) {
+  const whereClauses: string[] = [];
+  const params: unknown[] = [];
+
+  if (args.variable) {
+    whereClauses.push('variable = ?');
+    params.push(args.variable);
+  }
+  if (args.municipality) {
+    whereClauses.push('name LIKE ? COLLATE NOCASE');
+    params.push(`%${args.municipality}%`);
+  }
+  if (args.entity_type) {
+    whereClauses.push('entity_type = ?');
+    params.push(args.entity_type);
+  }
+  if (args.county) {
+    whereClauses.push('county_name LIKE ? COLLATE NOCASE');
+    params.push(`%${args.county}%`);
+  }
+  if (args.year) {
+    whereClauses.push('year = ?');
+    params.push(args.year);
+  }
+  if (args.year_start) {
+    whereClauses.push('year >= ?');
+    params.push(args.year_start);
+  }
+  if (args.year_end) {
+    whereClauses.push('year <= ?');
+    params.push(args.year_end);
+  }
+
+  const limit = clampLimit((args.limit as number) || 200, 1000);
+  const whereSQL = whereClauses.length > 0
+    ? 'WHERE ' + whereClauses.join(' AND ')
+    : '';
+
+  // Aggregate mode
+  if (args.aggregate_by) {
+    const groupCol: Record<string, string> = {
+      county: 'county_name',
+      entity_type: 'entity_type',
+      year: 'year',
+    };
+    const col = groupCol[args.aggregate_by as string] || 'entity_type';
+    const query = `
+      SELECT ${col},
+             COUNT(*) as record_count,
+             ROUND(AVG(value), 4) as avg_value,
+             ROUND(MIN(value), 4) as min_value,
+             ROUND(MAX(value), 4) as max_value
+      FROM dashboard_metrics
+      ${whereSQL}
+      GROUP BY ${col}
+      ORDER BY avg_value DESC
+      LIMIT ${limit}
+    `;
+    return executeQuery(env, 'mi_f65', query, params);
+  }
+
+  // Detail mode
+  const query = `
+    SELECT name, entity_type, county_name, year,
+           variable, analytics_desc, value, municode
+    FROM dashboard_metrics
+    ${whereSQL}
+    ORDER BY name, year
     LIMIT ${limit}
   `;
   return executeQuery(env, 'mi_f65', query, params);

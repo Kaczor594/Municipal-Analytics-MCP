@@ -11,14 +11,14 @@ compatibility_flags = ["nodejs_compat"]
 # D1 Database Bindings
 # IMPORTANT: Replace database_id values with your actual D1 database IDs
 # Run these commands to create databases and get IDs:
-#   wrangler d1 create holly-data-bronze
+#   wrangler d1 create holly-data-silver
 #   wrangler d1 create rockford
 #   wrangler d1 create historical-budgets
 
 [[d1_databases]]
 binding = "HOLLY_DB"
-database_name = "holly-data-bronze"
-database_id = "90233f51-396f-4952-8150-e00a6838e586"
+database_name = "holly-data-silver"
+database_id = "7479049a-57dc-4b80-a407-1a99c3115358"
 
 [[d1_databases]]
 binding = "ROCKFORD_DB"

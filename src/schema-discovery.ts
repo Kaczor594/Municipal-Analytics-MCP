@@ -8,6 +8,8 @@
 import {
   Env,
   DatabaseName,
+  DATABASE_DISPLAY_NAMES,
+  isValidIdentifier,
   getTables,
   getTableColumns,
   getTableRowCount,
@@ -40,16 +42,6 @@ export async function getDatabaseSchema(
   dbName: DatabaseName,
   includeSampleData: boolean = false
 ): Promise<DatabaseSchema> {
-  const displayNames: Record<DatabaseName, string> = {
-    holly: 'Holly Data Bronze',
-    rockford: 'Rockford',
-    historical: 'Historical Budgets',
-    cadillac: 'Cadillac',
-    norton_shores: 'Norton Shores Water Billing',
-    web_water: 'WEB Water',
-    mi_f65: 'Michigan F-65 Annual Financial Reports',
-  };
-
   const tables = await getTables(env, dbName);
   const tableSchemas: TableSchema[] = [];
   let totalRows = 0;
@@ -82,7 +74,7 @@ export async function getDatabaseSchema(
 
   return {
     name: dbName,
-    displayName: displayNames[dbName],
+    displayName: DATABASE_DISPLAY_NAMES[dbName],
     tables: tableSchemas,
     totalTables: tables.length,
     totalRows,
@@ -248,10 +240,10 @@ export async function getDistinctValues(
   limit: number = 50
 ): Promise<{ value: unknown; count: number }[]> {
   // Validate inputs
-  if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(tableName)) {
+  if (!isValidIdentifier(tableName)) {
     throw new Error('Invalid table name');
   }
-  if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(columnName)) {
+  if (!isValidIdentifier(columnName)) {
     throw new Error('Invalid column name');
   }
 

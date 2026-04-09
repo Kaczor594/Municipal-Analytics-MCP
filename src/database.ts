@@ -20,10 +20,10 @@ export interface Env {
 }
 
 // Database name mapping
-export type DatabaseName = 'holly' | 'rockford' | 'historical' | 'cadillac' | 'norton_shores' | 'web_water' | 'mi_f65';
+export type DatabaseName = 'holly_silver' | 'rockford' | 'historical' | 'cadillac' | 'norton_shores' | 'web_water' | 'mi_f65';
 
-const DATABASE_DISPLAY_NAMES: Record<DatabaseName, string> = {
-  holly: 'Holly Data Bronze',
+export const DATABASE_DISPLAY_NAMES: Record<DatabaseName, string> = {
+  holly_silver: 'Holly Data Silver',
   rockford: 'Rockford',
   historical: 'Historical Budgets',
   cadillac: 'Cadillac',
@@ -31,6 +31,14 @@ const DATABASE_DISPLAY_NAMES: Record<DatabaseName, string> = {
   web_water: 'WEB Water',
   mi_f65: 'Michigan F-65 Annual Financial Reports',
 };
+
+// --- Shared Validation ---
+
+const IDENTIFIER_RE = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+
+export function isValidIdentifier(name: string): boolean {
+  return IDENTIFIER_RE.test(name);
+}
 
 // Query result types
 export interface QueryResult {
@@ -61,7 +69,7 @@ export interface ColumnInfo {
  */
 export function getDatabase(env: Env, dbName: DatabaseName): D1Database {
   switch (dbName) {
-    case 'holly':
+    case 'holly_silver':
       return env.HOLLY_DB;
     case 'rockford':
       return env.ROCKFORD_DB;
@@ -230,7 +238,7 @@ export async function getTableColumns(
   tableName: string
 ): Promise<ColumnInfo[]> {
   // Validate table name to prevent SQL injection
-  if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(tableName)) {
+  if (!isValidIdentifier(tableName)) {
     throw new Error('Invalid table name');
   }
 
@@ -253,7 +261,7 @@ export async function getTableRowCount(
   tableName: string
 ): Promise<number> {
   // Validate table name
-  if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(tableName)) {
+  if (!isValidIdentifier(tableName)) {
     throw new Error('Invalid table name');
   }
 
@@ -307,15 +315,9 @@ export function getAvailableDatabases(): {
   name: DatabaseName;
   displayName: string;
 }[] {
-  return [
-    { name: 'holly', displayName: 'Holly Data Bronze' },
-    { name: 'rockford', displayName: 'Rockford' },
-    { name: 'historical', displayName: 'Historical Budgets' },
-    { name: 'cadillac', displayName: 'Cadillac' },
-    { name: 'norton_shores', displayName: 'Norton Shores Water Billing' },
-    { name: 'web_water', displayName: 'WEB Water' },
-    { name: 'mi_f65', displayName: 'Michigan F-65 Annual Financial Reports' },
-  ];
+  return (Object.entries(DATABASE_DISPLAY_NAMES) as [DatabaseName, string][]).map(
+    ([name, displayName]) => ({ name, displayName })
+  );
 }
 
 // --- Audit Logging ---
